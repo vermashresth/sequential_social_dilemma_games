@@ -10,7 +10,6 @@ import tensorflow as tf
 
 from ray.rllib.models.tf.misc import normc_initializer, flatten
 from ray.rllib.models.model import Model
-import tensorflow.contrib.slim as slim
 
 
 class FCNet(Model):
@@ -35,17 +34,15 @@ class FCNet(Model):
             i = 1
             for size in hiddens:
                 label = "fc{}".format(i)
-                last_layer = slim.fully_connected(
-                    last_layer,
+                last_layer = tf.keras.layers.Dense(
                     size,
-                    weights_initializer=normc_initializer(1.0),
-                    activation_fn=tf.nn.relu,
-                    scope=label)
+                    kernel_initializer=normc_initializer(1.0),
+                    activation=tf.nn.relu,
+                    scope=label)(last_layer)
                 i += 1
-            output = slim.fully_connected(
-                last_layer,
-                num_outputs,
-                weights_initializer=normc_initializer(0.01),
-                activation_fn=None,
-                scope="fc_out")
+            output = tf.keras.layers.Dense(
+                size,
+                kernel_initializer=normc_initializer(0.01),
+                activation=tf.nn.relu,
+                scope=label)(last_layer)
             return output, last_layer

@@ -10,7 +10,7 @@ import tensorflow as tf
 
 from ray.rllib.models.tf.misc import normc_initializer, flatten
 from ray.rllib.models.model import Model
-import tensorflow.contrib.slim as slim
+# import tensorflow.contrib.slim as slim
 
 
 class ConvToFCNet(Model):
@@ -24,7 +24,7 @@ class ConvToFCNet(Model):
 
         hiddens = [32, 32]
         with tf.name_scope("custom_net"):
-            inputs = slim.conv2d(
+            inputs = tf.nn.conv2d(
                 inputs,
                 6,
                 [3, 3],

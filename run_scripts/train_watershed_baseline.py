@@ -8,8 +8,8 @@ import tensorflow as tf
 
 from social_dilemmas.envs.harvest import HarvestEnv
 from social_dilemmas.envs.cleanup import CleanupEnv
-from models.conv_to_fc_net import ConvToFCNet
-from models.conv_to_fcnet_v2 import ConvToFCNetv2
+# from models.conv_to_fc_net import ConvToFCNet
+# from models.conv_to_fcnet_v2 import ConvToFCNetv2
 from models.fc_net import FCNet
 
 FLAGS = tf.app.flags.FLAGS
