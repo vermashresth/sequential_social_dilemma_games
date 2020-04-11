@@ -24,7 +24,8 @@ class WatershedEnv(MultiAgentEnv):
         self.observation_space = gym.spaces.Box(low=-200, high=200, shape=(7,))
         self.action_space = gym.spaces.Discrete(10)
         self.part = part
-
+    def i2id(self, i):
+        return 'agent-'+str(i)
     def reset(self):
         global al
         self.dones = set()
@@ -40,7 +41,7 @@ class WatershedEnv(MultiAgentEnv):
         for i in range(self.n_agents):
             st = [self.Q1, self.Q2, self.S]
             st.extend(al[1:5])
-            obs[i] = st
+            obs[self.i2id(i)] = st
         return obs
 
     def get_seed(self):
@@ -104,7 +105,7 @@ class WatershedEnv(MultiAgentEnv):
                 rewnow = f_rew[i] - pen
             else:
                 rewnow = sum(f_rew) - pen
-            obs[i], rew[i], done[i], info[i] = np.array(st), rewnow, True, {"viol":n_viol}
+            obs[self.i2id(i)], rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = np.array(st), rewnow, True, {"viol":n_viol}
             self.dones.add(i)
         done["__all__"] = True
 

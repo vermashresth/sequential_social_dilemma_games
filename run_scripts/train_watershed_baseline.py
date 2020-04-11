@@ -8,49 +8,51 @@ import tensorflow as tf
 
 from social_dilemmas.envs.harvest import HarvestEnv
 from social_dilemmas.envs.cleanup import CleanupEnv
+from social_dilemmas.envs.watershed import WatershedEnv
+
 # from models.conv_to_fc_net import ConvToFCNet
 # from models.conv_to_fcnet_v2 import ConvToFCNetv2
 from models.fc_net import FCNet
 
-FLAGS = tf.app.flags.FLAGS
+FLAGS = tf.compat.v1.flags.FLAGS
 
-tf.app.flags.DEFINE_string(
+tf.compat.v1.flags.DEFINE_string(
     'exp_name', None,
     'Name of the ray_results experiment directory where results are stored.')
-tf.app.flags.DEFINE_string(
+tf.compat.v1.flags.DEFINE_string(
     'env', 'cleanup',
     'Name of the environment to rollout. Can be cleanup or harvest.')
-tf.app.flags.DEFINE_string(
+tf.compat.v1.flags.DEFINE_string(
     'algorithm', 'A3C',
     'Name of the rllib algorithm to use.')
-tf.app.flags.DEFINE_integer(
+tf.compat.v1.flags.DEFINE_integer(
     'num_agents', 5,
     'Number of agent policies')
-tf.app.flags.DEFINE_integer(
+tf.compat.v1.flags.DEFINE_integer(
     'train_batch_size', 30000,
     'Size of the total dataset over which one epoch is computed.')
-tf.app.flags.DEFINE_integer(
+tf.compat.v1.flags.DEFINE_integer(
     'checkpoint_frequency', 20,
     'Number of steps before a checkpoint is saved.')
-tf.app.flags.DEFINE_integer(
+tf.compat.v1.flags.DEFINE_integer(
     'training_iterations', 10000,
     'Total number of steps to train for')
-tf.app.flags.DEFINE_integer(
+tf.compat.v1.flags.DEFINE_integer(
     'num_cpus', 2,
     'Number of available CPUs')
-tf.app.flags.DEFINE_integer(
+tf.compat.v1.flags.DEFINE_integer(
     'num_gpus', 1,
     'Number of available GPUs')
-tf.app.flags.DEFINE_boolean(
+tf.compat.v1.flags.DEFINE_boolean(
     'use_gpus_for_workers', False,
     'Set to true to run workers on GPUs rather than CPUs')
-tf.app.flags.DEFINE_boolean(
+tf.compat.v1.flags.DEFINE_boolean(
     'use_gpu_for_driver', False,
     'Set to true to run driver on GPU rather than CPU.')
-tf.app.flags.DEFINE_float(
+tf.compat.v1.flags.DEFINE_float(
     'num_workers_per_device', 1,
     'Number of workers to place on a single device (CPU or GPU)')
-tf.app.flags.DEFINE_boolean(
+tf.compat.v1.flags.DEFINE_boolean(
     'return_agent_actions', 0,
     'If true we return the previous actions of all the agents')
 
@@ -199,4 +201,4 @@ def main(unused_argv):
 
 
 if __name__ == '__main__':
-    tf.app.run(main)
+    tf.compat.v1.app.run(main)
