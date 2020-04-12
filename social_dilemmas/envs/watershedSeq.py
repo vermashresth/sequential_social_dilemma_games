@@ -1,7 +1,7 @@
 from ray.rllib.env.multi_agent_env import MultiAgentEnv
+from social_dilemmas.envs.watershed import WatershedEnv
 import numpy as np
 import gym
-
 a = [0, -.2, -.06, -.29, -.13, -.056, -.15]
 b = [0, 6, 2.5, 6.28, 6, 3.74, 7.6]
 c = [0, -5, 0, -3, -6, -23, -15]
@@ -20,8 +20,9 @@ big_req = [24*40, 30*40, 24*40, 30*40]
 #           [40, 22, 60, 28, 36, 45, 40]]
 # al = [0, 12, 10, 8, 6, 15, 10]
 
-class WatershedSeqEnv(MultiAgentEnv):
+class WatershedSeqEnv(WatershedEnv):
     def __init__(self, part=False):
+        super().__init__
         self.n_agents = 4
         self.dones = set()
         self.observation_space = gym.spaces.Box(low=-10000, high=10000, shape=(7,))
@@ -115,7 +116,7 @@ class WatershedSeqEnv(MultiAgentEnv):
         #     f_rew-= pen
         self.current_sums = list(np.array(self.current_sums) + np.array([x1, x2, x4, x6]))
         new_obs = self.reset(full_reset=False)
-        new_st = new_obs[0][:7]
+        new_st = new_obs['agent-0'][:7]
         # old_big_req = new_obs[0][7:]
         # new_big_req = list(np.array(old_big_req) - np.array(self.current_sums))
         # new_st.extend(new_big_req)

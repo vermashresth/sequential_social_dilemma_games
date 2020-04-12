@@ -5,10 +5,14 @@ import gym
 a = [0, -.2, -.06, -.29, -.13, -.056, -.15]
 b = [0, 6, 2.5, 6.28, 6, 3.74, 7.6]
 c = [0, -5, 0, -3, -6, -23, -15]
+
+
 from itertools import product
-B = [[0], range(8, 40, 8), range(0, 40, 8), range(8, 40, 8), range(6, 40, 8), [15], [10] ]
-all_al = list(product(*B))
-B = [[0], range(8, 24, 8), range(8, 40, 8), range(8, 20, 8), range(8, 24, 8), [15], [10] ]
+# B = [[0], range(8, 40, 8), range(0, 40, 8), range(8, 40, 8), range(6, 40, 8), [15], [10] ]
+# all_al = list(product(*B))
+# B = [[0], range(8, 24, 8), range(8, 40, 8), range(8, 20, 8), range(8, 24, 8), [15], [10] ]
+# all_al = list(product(*B))
+B = [[0], range(8, 24, 8), range(8, 30, 8), [8], range(8, 24, 8), [15], range(8, 30, 8) ]
 all_al = list(product(*B))
 # all_al = [[0, 12, 10, 8, 6, 15, 10],
 #           [10, 40, 0, 80, 1, 45, 30],
@@ -16,6 +20,8 @@ all_al = list(product(*B))
 #           [30, 2, 0, 5, 10, 20, 0],
 #           [40, 22, 60, 28, 36, 45, 40]]
 # al = [0, 12, 10, 8, 6, 15, 10]
+
+big_req = [24*40, 30*40, 24*40, 30*40]
 
 class WatershedEnv(MultiAgentEnv):
     def __init__(self, part=False):
@@ -29,7 +35,7 @@ class WatershedEnv(MultiAgentEnv):
     def reset(self):
         global al
         self.dones = set()
-        self.seed = np.random.choice(range(96))
+        self.seed = np.random.choice(range(108))
         # self.seed = 0
         ss = self.seed%3
         sa = self.seed//3
@@ -76,9 +82,7 @@ class WatershedEnv(MultiAgentEnv):
     def get_action_space(self):
         return self.action_space
 
-    def step(self, action_dict):
-        obs, rew, done, info = {}, {}, {}, {}
-
+    def cal_rewards(self, action_dict):
         actions = list(action_dict.values())
         x1, x2, x4, x6 = list(np.array(actions)*0.1)
         x1 = al[1]+(self.Q1-al[2]-al[1])*x1
@@ -95,6 +99,13 @@ class WatershedEnv(MultiAgentEnv):
         for j in range(6):
             f_rew.append(a[j+1]*x[j]**2+b[j+1]*x[j]+c[j+1])
         pen, n_viol = self.cal_violations(x)
+
+        return x, f_rew, pen, n_viol
+
+    def step(self, action_dict):
+        obs, rew, done, info = {}, {}, {}, {}
+
+        _, f_rew, pen, n_viol = self.cal_rewards(action_dict)
         # if not self.part:
         #     f_rew-= pen
 
@@ -109,4 +120,83 @@ class WatershedEnv(MultiAgentEnv):
             self.dones.add(i)
         done["__all__"] = True
 
+        return obs, rew, done, info
+
+
+
+class WatershedSeqEnv(WatershedEnv):
+    def __init__(self, part=False):
+        super().__init__()
+        self.end_episode = False
+        self.internal_step = 0;
+        self.max_steps = 10;
+        self.mybigreq = [24*10, 40*10, 24*10, 10*10]
+        self.current_sums = [0,0,0,0]
+
+    def reset(self, full_reset = True):
+        global al
+        self.dones = set()
+        self.seed = np.random.choice(range(108))
+        # self.seed = 0
+        ss = self.seed%3
+        sa = self.seed//3
+        self.Q1 = [160, 115, 80][ss]
+        self.Q2 = [65, 50, 35][ss]
+        self.S = [15, 12, 10][ss]
+        al = all_al[sa]
+        obs = {}
+        if full_reset:
+            self.internal_step = 0
+            self.current_sums = [0,0,0,0]
+            self.end_episode = False
+        for i in range(self.n_agents):
+            st = [self.Q1, self.Q2, self.S]
+            st.extend(al[1:5])
+            # st.extend(self.mybigreq)
+            obs[self.i2id(i)] = st
+        return obs
+
+    def step(self, action_dict):
+        # print("hi")
+        if self.internal_step>=self.max_steps:
+            self.end_episode = True
+        obs, rew, done, info = {}, {}, {}, {}
+        x, f_rew, pen, n_viol = self.cal_rewards(action_dict)
+        x1,x2,x3,x4,x5,x6 = x
+        # if not self.part:
+        #     f_rew-= pen
+        self.current_sums = list(np.array(self.current_sums) + np.array([x1, x2, x4, x6]))
+        new_obs = self.reset(full_reset=False)
+        new_st = new_obs['agent-0'][:7]
+        # old_big_req = new_obs[0][7:]
+        # new_big_req = list(np.array(old_big_req) - np.array(self.current_sums))
+        # new_st.extend(new_big_req)
+
+        for i in range(self.n_agents):
+            # st = [self.Q1, self.Q2, self.S]
+            # st.extend(al[1:5])
+            temp = []
+            if self.end_episode:
+                for j in range(4):
+                    temp.append(self.current_sums[j]/self.mybigreq[j]*100)
+            if self.part:
+                rewnow = f_rew[i] - pen
+                if self.end_episode:
+                    rewnow += temp[i]
+            else:
+                rewnow = sum(f_rew) - pen
+                if self.end_episode:
+
+
+                    # print("temp", temp)
+                    rewnow+=sum(temp)
+                # else:
+                #   print(rewnow)
+
+            obs[self.i2id(i)], rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = np.array(new_st), rewnow, self.end_episode, {"viol":n_viol, "temp":sum(temp), "acts":action_dict, 'end':self.end_episode}
+            if self.end_episode:
+                self.dones.add(i)
+
+        done["__all__"] = self.end_episode
+        self.internal_step+=1
         return obs, rew, done, info

@@ -8,13 +8,12 @@ import tensorflow as tf
 
 from social_dilemmas.envs.harvest import HarvestEnv
 from social_dilemmas.envs.cleanup import CleanupEnv
-from social_dilemmas.envs.watershed import WatershedEnv
-
-from social_dilemmas.envs.watershedSeq import WatershedSeqEnv
+from social_dilemmas.envs.watershed import WatershedEnv, WatershedSeqEnv
 
 # from models.conv_to_fc_net import ConvToFCNet
 # from models.conv_to_fcnet_v2 import ConvToFCNetv2
 from models.fc_net import FCNet
+from models.lstm_fc_net import LSTMFCNet
 
 FLAGS = tf.compat.v1.flags.FLAGS
 
@@ -123,8 +122,11 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
     # model_name = "conv_to_fc_net"
     # ModelCatalog.register_custom_model(model_name, ConvToFCNet)
 
-    model_name = "fc_net"
-    ModelCatalog.register_custom_model(model_name, FCNet)
+    # model_name = "fc_net"
+    # ModelCatalog.register_custom_model(model_name, FCNet)
+
+    model_name = "lstm_fc_net"
+    ModelCatalog.register_custom_model(model_name, LSTMFCNet)
 
     agent_cls = get_agent_class(algorithm)
     config = agent_cls._default_config.copy()
@@ -167,7 +169,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
                     "policies": policy_graphs,
                     "policy_mapping_fn": tune.function(policy_mapping_fn),
                 },
-                "model": {"custom_model": "fc_net", "use_lstm": True,
+                "model": {"custom_model": "lstm_fc_net", "use_lstm": False,
                         "custom_options": {"return_agent_actions": return_agent_actions, "cell_size": 128},
                           "conv_filters": [[6, [3, 3], 1]]}
 
