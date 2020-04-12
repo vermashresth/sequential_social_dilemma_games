@@ -10,6 +10,8 @@ from social_dilemmas.envs.harvest import HarvestEnv
 from social_dilemmas.envs.cleanup import CleanupEnv
 from social_dilemmas.envs.watershed import WatershedEnv
 
+from social_dilemmas.envs.watershedSeq import WatershedSeqEnv
+
 # from models.conv_to_fc_net import ConvToFCNet
 # from models.conv_to_fcnet_v2 import ConvToFCNetv2
 from models.fc_net import FCNet
@@ -69,7 +71,12 @@ watershed_default_params = {
     'lr_init': 0.01,
     'lr_final': 0.0001,
     'entropy_coeff': 0.001
+}
 
+watershed_seq_default_params = {
+    'lr_init': 0.01,
+    'lr_final': 0.0001,
+    'entropy_coeff': 0.001
 }
 
 
@@ -85,6 +92,10 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
         def env_creator(_):
             return WatershedEnv()
         single_env = WatershedEnv()
+    elif env == 'watershed_seq':
+        def env_creator(_):
+            return WatershedSeqEnv()
+        single_env = WatershedSeqEnv()
     else:
         def env_creator(_):
             return CleanupEnv(num_agents=num_agents)
@@ -170,6 +181,8 @@ def main(unused_argv):
         hparams = harvest_default_params
     elif FLAGS.env == 'watershed':
         hparams = watershed_default_params
+    elif FLAGS.env == 'watershed_seq':
+        hparams = watershed_seq_default_params
     else:
         hparams = cleanup_default_params
     alg_run, env_name, config = setup(FLAGS.env, hparams, FLAGS.algorithm,
