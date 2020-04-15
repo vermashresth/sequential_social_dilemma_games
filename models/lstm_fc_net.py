@@ -1,3 +1,5 @@
+import numpy as np
+
 from ray.rllib.models.modelv2 import ModelV2
 from ray.rllib.models.tf.recurrent_tf_modelv2 import RecurrentTFModelV2
 from ray.rllib.utils.annotations import override
@@ -16,7 +18,7 @@ class LSTMFCNet(RecurrentTFModelV2):
                  name,
                  hiddens_size=256,
                  cell_size=64):
-        super(MyKerasRNN, self).__init__(obs_space, action_space, num_outputs,
+        super(LSTMFCNet, self).__init__(obs_space, action_space, num_outputs,
                                          model_config, name)
         self.cell_size = cell_size
 
@@ -49,7 +51,7 @@ class LSTMFCNet(RecurrentTFModelV2):
             inputs=[input_layer, seq_in, state_in_h, state_in_c],
             outputs=[logits, values, state_h, state_c])
         self.register_variables(self.rnn_model.variables)
-        self.rnn_model.summary()
+        # self.rnn_model.summary()
 
     @override(RecurrentTFModelV2)
     def forward_rnn(self, inputs, state, seq_lens):

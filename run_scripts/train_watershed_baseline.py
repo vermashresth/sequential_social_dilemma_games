@@ -66,6 +66,7 @@ cleanup_default_params = {
     'lr_init': 0.00126,
     'lr_final': 0.000012,
     'entropy_coeff': .00176}
+    
 watershed_default_params = {
     'lr_init': 0.01,
     'lr_final': 0.0001,
