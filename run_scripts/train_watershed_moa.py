@@ -219,9 +219,9 @@ if __name__=='__main__':
         ray.init()
     if args.env == 'harvest':
         hparams = harvest_default_params
-    elif FLAGS.env == 'watershed':
+    elif args.env == 'watershed':
         hparams = watershed_default_params
-    elif FLAGS.env == 'watershed_seq':
+    elif args.env == 'watershed_seq':
         hparams = watershed_seq_default_params
     else:
         hparams = cleanup_default_params
@@ -273,4 +273,3 @@ if __name__=='__main__':
         exp_dict['upload_dir'] = s3_string
 
     tune.run(**exp_dict, queue_trials=True)
-vvvvvvvvvvvvvvvvvvvvvv

@@ -24,14 +24,20 @@ all_al = list(product(*B))
 big_req = [24*40, 30*40, 24*40, 30*40]
 
 class WatershedEnv(MultiAgentEnv):
-    def __init__(self, part=False):
+    def __init__(self, return_agent_actions = False, part=False):
         self.n_agents = 4
         self.dones = set()
         self.observation_space = gym.spaces.Box(low=-200, high=200, shape=(7,))
         self.action_space = gym.spaces.Discrete(10)
         self.part = part
+        self.return_agent_actions = return_agent_actions
+        if self.return_agent_actions:
+            self.prev_actions = defaultdict(lambda: [0] * self.num_agents)
     def i2id(self, i):
         return 'agent-'+str(i)
+    def find_visible_agents(self, agent_id):
+        visible_agents = [1 for i in range(self.n_agents-1)]
+        return visible_agents
     def reset(self):
         global al
         self.dones = set()
@@ -116,7 +122,14 @@ class WatershedEnv(MultiAgentEnv):
                 rewnow = f_rew[i] - pen
             else:
                 rewnow = sum(f_rew) - pen
-            obs[self.i2id(i)], rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = np.array(st), rewnow, True, {"viol":n_viol}
+            if self.return_agent_actions:
+                prev_actions = np.array([actions[key] for key in sorted(actions.keys())
+                                         if key != agent.agent_id]).astype(np.int64)
+                obs[self.i2id(i)] = {"curr_obs": np.array(st), "other_agent_actions": prev_actions,
+                                                "visible_agents": self.find_visible_agents(self.i2id(i))}
+                rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] =  rewnow, True, {"viol":n_viol}
+            else:
+                obs[self.i2id(i)], rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = np.array(st), rewnow, True, {"viol":n_viol}
             self.dones.add(i)
         done["__all__"] = True
 
@@ -145,14 +158,23 @@ class WatershedSeqEnv(WatershedEnv):
         self.S = [15, 12, 10][ss]
         al = all_al[sa]
         obs = {}
+
         if full_reset:
             self.internal_step = 0
             self.current_sums = [0,0,0,0]
             self.end_episode = False
+            prev_actions = np.array([0 for _ in range(self.num_agents - 1)]).astype(np.int64)
         for i in range(self.n_agents):
             st = [self.Q1, self.Q2, self.S]
             st.extend(al[1:5])
             # st.extend(self.mybigreq)
+            if self.return_agent_actions:
+                # No previous actions so just pass in zeros
+
+                observations[agent.agent_id] = {"curr_obs": rgb_arr, "other_agent_actions": prev_actions,
+                                                "visible_agents": self.find_visible_agents(agent.agent_id)}
+            else:
+                observations[agent.agent_id] = rgb_arr
             obs[self.i2id(i)] = st
         return obs
 
@@ -192,8 +214,19 @@ class WatershedSeqEnv(WatershedEnv):
                     rewnow+=sum(temp)
                 # else:
                 #   print(rewnow)
-
-            obs[self.i2id(i)], rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = np.array(new_st), rewnow, self.end_episode, {"viol":n_viol, "temp":sum(temp), "acts":action_dict, 'end':self.end_episode}
+            if self.return_agent_actions:
+                prev_actions = np.array([actions[key] for key in sorted(actions.keys())
+                                         if key != agent.agent_id]).astype(np.int64)
+                obs[self.i2id(i)] = {"curr_obs": np.array(new_st), "other_agent_actions": prev_actions,
+                                                "visible_agents": self.find_visible_agents(self.i2id(i))}
+                rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = rewnow, self.end_episode,
+                                                {"viol":n_viol, "temp":sum(temp), "acts":action_dict,
+                                                'end':self.end_episode}
+            else:
+                obs[self.i2id(i)], rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = np.array(new_st),
+                                                                                               rewnow, self.end_episode,
+                                                                                               {"viol":n_viol, "temp":sum(temp),
+                                                                                                "acts":action_dict, 'end':self.end_episode}
             if self.end_episode:
                 self.dones.add(i)
 
