@@ -218,9 +218,7 @@ class WatershedSeqEnv(WatershedEnv):
                 prev_actions = np.array([actions[key] for key in sorted(actions.keys())
                                          if key != agent.agent_id]).astype(np.int64)
                 obs[self.i2id(i)] = {"curr_obs": np.array(new_st), "other_agent_actions": prev_actions,"visible_agents": self.find_visible_agents(self.i2id(i))}
-                rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = rewnow, self.end_episode,
-                                                {"viol":n_viol, "temp":sum(temp), "acts":action_dict,
-                                                'end':self.end_episode}
+                rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = rewnow, self.end_episode, {"viol":n_viol, "temp":sum(temp), "acts":action_dict, 'end':self.end_episode}
             else:
                 obs[self.i2id(i)], rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = np.array(new_st), rewnow, self.end_episode, {"viol":n_viol, "temp":sum(temp), "acts":action_dict, 'end':self.end_episode}
             if self.end_episode:

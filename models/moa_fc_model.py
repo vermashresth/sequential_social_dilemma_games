@@ -142,7 +142,7 @@ class MOA_LSTM(RecurrentTFModelV2):
         total_obs = obs_space.shape[0]
         vision_obs = total_obs - 2 * self.num_other_agents
         vision_width = int(np.sqrt(vision_obs / 3))
-        vision_box = Box(low=-1.0, high=1.0, shape=(vision_width, vision_width, 3), dtype=np.float32)
+        vision_box = Box(low=-200.0, high=200.0, shape=(vision_obs), dtype=np.float32)
         # an extra none for the time dimension
         inputs = tf.keras.layers.Input(
             shape=(None,) + vision_box.shape, name="observations")
@@ -152,34 +152,26 @@ class MOA_LSTM(RecurrentTFModelV2):
         last_layer = inputs
         activation = get_activation_fn(model_config.get("conv_activation"))
         filters = model_config.get("conv_filters")
-        for i, (out_size, kernel, stride) in enumerate(filters[:-1], 1):
-            last_layer = tf.keras.layers.TimeDistributed(tf.keras.layers.Conv2D(
-                out_size,
-                kernel,
-                strides=(stride, stride),
-                activation=activation,
-                padding="same",
-                channels_last=True,
-                name="conv{}".format(i)))(last_layer)
-        out_size, kernel, stride = filters[-1]
-        if len(filters) == 1:
-            i = -1
+        for i in range(2):
+            last_layer = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(
+                4,
+                activation=tf.nn.relu,
+                kernel_initializer=normc_initializer(1.0))
+                name="fc{}".format(i)))(last_layer)
 
         # should be batch x time x height x width x channel
-        conv_out = tf.keras.layers.TimeDistributed(tf.keras.layers.Conv2D(
-            out_size,
-            kernel,
-            strides=(stride, stride),
-            activation=activation,
-            padding="valid",
-            name="conv{}".format(i + 1)))(last_layer)
+        fc_out = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(
+            4,
+            activation=tf.nn.relu,
+            kernel_initializer=normc_initializer(1.0))
+            name="fc{}".format(i+1)))(last_layer)
 
-        self.base_model = tf.keras.Model(inputs, [conv_out])
+        self.base_model = tf.keras.Model(inputs, [fc_out])
         self.register_variables(self.base_model.variables)
         self.base_model.summary()
 
         # now output two heads, one for action selection and one for the prediction of other agents
-        inner_obs_space = Box(low=-1, high=1, shape=conv_out.shape[2:], dtype=np.float32)
+        inner_obs_space = Box(low=-1, high=1, shape=fc.shape[2:], dtype=np.float32)
 
         cell_size = model_config["custom_options"].get("cell_size")
         self.actions_model = KerasRNN(inner_obs_space, action_space, num_outputs,
