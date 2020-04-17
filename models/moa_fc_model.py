@@ -140,13 +140,14 @@ class MOA_LSTM(RecurrentTFModelV2):
         # Build the vision network here
         # TODO(@evinitsky) replace this with obs_space.original_space
         total_obs = obs_space.shape[0]
-        vision_obs = total_obs - 2 * self.num_other_agents
-        vision_width = int(np.sqrt(vision_obs / 3))
-        vision_box = Box(low=-200.0, high=200.0, shape=(vision_obs), dtype=np.float32)
+        print("###\n###\n{}\n###\n###".format(total_obs))
+        curr_obs = total_obs - 2 * self.num_other_agents
+        print("###\n###\n{}\n###\n###".format(curr_obs))
+        curr_box = Box(low=-200.0, high=200.0, shape=(curr_obs,), dtype=np.float32)
         # an extra none for the time dimension
         inputs = tf.keras.layers.Input(
-            shape=(None,) + vision_box.shape, name="observations")
-
+            shape=(None,) + curr_box.shape, name="observations")
+        print("###\n###\n{}\n###\n###".format(inputs.shape))
         # A temp config with custom_model false so that we can get a basic vision model with the desired filters
         # Build the CNN layer
         last_layer = inputs
@@ -156,22 +157,22 @@ class MOA_LSTM(RecurrentTFModelV2):
             last_layer = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(
                 4,
                 activation=tf.nn.relu,
-                kernel_initializer=normc_initializer(1.0))
+                kernel_initializer=normc_initializer(1.0),
                 name="fc{}".format(i)))(last_layer)
 
         # should be batch x time x height x width x channel
         fc_out = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(
             4,
             activation=tf.nn.relu,
-            kernel_initializer=normc_initializer(1.0))
+            kernel_initializer=normc_initializer(1.0),
             name="fc{}".format(i+1)))(last_layer)
 
         self.base_model = tf.keras.Model(inputs, [fc_out])
         self.register_variables(self.base_model.variables)
         self.base_model.summary()
-
+        print("####\n####\n ", fc_out.shape[2:])
         # now output two heads, one for action selection and one for the prediction of other agents
-        inner_obs_space = Box(low=-1, high=1, shape=fc.shape[2:], dtype=np.float32)
+        inner_obs_space = Box(low=-1, high=1, shape=fc_out.shape[2:], dtype=np.float32)
 
         cell_size = model_config["custom_options"].get("cell_size")
         self.actions_model = KerasRNN(inner_obs_space, action_space, num_outputs,

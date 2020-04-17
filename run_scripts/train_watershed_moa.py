@@ -22,7 +22,7 @@ parser.add_argument('--exp_name', type=str, default='causal_env', help='Name exp
 parser.add_argument('--env', type=str, default='cleanup', help='Name of the environment to rollout. Can be '
                                                                'cleanup or harvest.')
 parser.add_argument('--algorithm', type=str, default='PPO', help='Name of the rllib algorithm to use.')
-parser.add_argument('--num_agents', type=int, default=2, help='Number of agent policies')
+parser.add_argument('--num_agents', type=int, default=4, help='Number of agent policies')
 parser.add_argument('--train_batch_size', type=int, default=26000,
                     help='Size of the total dataset over which one epoch is computed.')
 parser.add_argument('--checkpoint_frequency', type=int, default=50,
@@ -83,12 +83,12 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
         single_env = HarvestEnv(num_agents=num_agents, return_agent_actions=True)
     elif env == 'watershed':
         def env_creator(_):
-            return WatershedEnv()
-        single_env = WatershedEnv()
+            return WatershedEnv(return_agent_actions=True)
+        single_env = WatershedEnv(return_agent_actions=True)
     elif env == 'watershed_seq':
         def env_creator(_):
-            return WatershedSeqEnv()
-        single_env = WatershedSeqEnv()
+            return WatershedSeqEnv(return_agent_actions=True)
+        single_env = WatershedSeqEnv(return_agent_actions=True)
     else:
         def env_creator(_):
             return CleanupEnv(num_agents=num_agents, return_agent_actions=True)
