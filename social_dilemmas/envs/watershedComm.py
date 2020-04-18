@@ -71,7 +71,7 @@ class WatershedEnv(MultiAgentEnv):
 
                 obs[self.i2id(i)] = {"curr_obs": np.array(st), "other_agent_actions": prev_actions,
                                                 "visible_agents": self.find_visible_agents(self.i2id(i))}
-            else:xx
+            else:
                 obs[self.i2id(i)] = np.array(st)
             # obs[self.i2id(i)] = st
         return obs
@@ -173,7 +173,7 @@ class WatershedSeqEnv(WatershedEnv):
         self.current_sums = [0,0,0,0]
 
     def get_new_state(self):
-
+        global al
         self.seed = np.random.choice(range(108))
         # self.seed = 0
         ss = self.seed%3
@@ -194,7 +194,7 @@ class WatershedSeqEnv(WatershedEnv):
 
         obs = {}
         st = self.get_new_state()
-
+        self.prev_obs = st[:]
         if full_reset:
             self.internal_step = 0
             self.current_sums = [0,0,0,0]
@@ -209,12 +209,13 @@ class WatershedSeqEnv(WatershedEnv):
                 obs[self.i2id(i)] = {"curr_obs": np.array(st), "other_agent_actions": prev_actions,
                                                 "visible_agents": self.find_visible_agents(self.i2id(i))}
             else:
-                if i<=4:
+                if i<4:
                     #comm
                     obs[self.i2id(i)] = np.array(st)
                 else:
-                    st.extend([-1, -1, -1, -1])
-                    obs[self.i2id(i)] = np.array(st)
+                    new_st = st[:]
+                    new_st.extend([-1, -1, -1, -1])
+                    obs[self.i2id(i)] = np.array(new_st)
             # obs[self.i2id(i)] = st
         return obs
 
@@ -223,7 +224,8 @@ class WatershedSeqEnv(WatershedEnv):
         if self.internal_step>=self.max_steps:
             self.end_episode = True
         obs, rew, done, info = {}, {}, {}, {}
-        x, f_rew, pen, n_viol = self.cal_rewards(action_dict)
+        only_actions = {i:action_dict[i] for i in action_dict if int(i[-1])>=4}
+        x, f_rew, pen, n_viol = self.cal_rewards(only_actions)
         x1,x2,x3,x4,x5,x6 = x
         # if not self.part:
         #     f_rew-= pen
@@ -237,6 +239,9 @@ class WatershedSeqEnv(WatershedEnv):
         # new_big_req = list(np.array(old_big_req) - np.array(self.current_sums))
         # new_st.extend(new_big_req)
         self.prev_obs = new_st.copy()
+        comm_actions = []
+        for i in range(self.num_agents//2):
+            comm_actions.append(action_dict['agent-{}'.format(4+i)])
         for i in range(self.num_agents):
             # st = [self.Q1, self.Q2, self.S]
             # st.extend(al[1:5])
@@ -263,9 +268,9 @@ class WatershedSeqEnv(WatershedEnv):
                 if i<4:
                     obs[self.i2id(i)] = np.array(new_st)
                 else:
-                    comm_action = action_dict[self.i2id(i%4)]
-                    old_st.extend(comm_action)
-                    obs[self.i2id(i)] = np.array(old_st)
+                    aug_state = old_st[:]
+                    aug_state.extend(comm_actions)
+                    obs[self.i2id(i)] = np.array(aug_state)
                 rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = rewnow, self.end_episode, {"viol":n_viol, "temp":sum(temp), "acts":action_dict, 'end':self.end_episode}
             if self.end_episode:
                 self.dones.add(i)

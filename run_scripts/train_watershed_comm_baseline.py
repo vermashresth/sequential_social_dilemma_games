@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from social_dilemmas.envs.harvest import HarvestEnv
 from social_dilemmas.envs.cleanup import CleanupEnv
-from social_dilemmas.envs.watershed import WatershedEnv, WatershedSeqEnv
+from social_dilemmas.envs.watershedComm import WatershedEnv, WatershedSeqEnv
 
 # from models.conv_to_fc_net import ConvToFCNet
 # from models.conv_to_fcnet_v2 import ConvToFCNetv2
@@ -106,6 +106,9 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
 
     obs_space = single_env.observation_space
     act_space = single_env.action_space
+
+    obs_comm_space = single_env.get_observation_space(2)
+    act_comm_space = single_env.get_action_space(2)
 
     # Each policy can have a different configuration (including custom model)
     def gen_policy(i):
