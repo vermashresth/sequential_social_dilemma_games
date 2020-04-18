@@ -78,7 +78,7 @@ class WatershedEnv(MultiAgentEnv):
         if id==-1:
             st.extend(al[1:5])
         else:
-            st.append(al[self.agentID2real(i)])
+            st.append(al[self.agentID2real[id]])
         return st
 
     def reset(self):
@@ -199,8 +199,8 @@ class WatershedSeqEnv(WatershedEnv):
         self.dones = set()
 
         obs = {}
-        st = self.get_new_state()
-        self.prev_obs = st[:]
+        if not self.local_obs:
+            st = self.get_new_state()
 
         self.internal_step = 0
         self.current_sums = [0,0,0,0]
@@ -208,8 +208,8 @@ class WatershedSeqEnv(WatershedEnv):
         prev_actions = np.array([0 for _ in range(self.num_agents - 1)]).astype(np.int64)
 
         for i in range(self.num_agents):
-            st = [self.Q1, self.Q2, self.S]
-            st.extend(al[1:5])
+            if self.local_obs:
+                st = self.get_new_state(i)
             if self.return_agent_actions:
                 # No previous actions so just pass in zeros
 
@@ -230,9 +230,13 @@ class WatershedSeqEnv(WatershedEnv):
 
         self.current_sums = list(np.array(self.current_sums) + np.array([x1, x2, x4, x6]))
 
-        new_st = self.get_new_state()
+        if not self.local_obs:
+            new_st = self.get_new_state()
 
         for i in range(self.num_agents):
+
+            if self.local_obs:
+                new_st = self.get_new_state(i)
 
             temp = []
             if self.end_episode:
@@ -280,17 +284,20 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
             self.observation_space = gym.spaces.Box(low=-200, high=200, shape=(self.n_flows+self.n_reqs+ self.comm_agents,))
 
 
-        self.observation_space_comm = gym.spaces.Box(low=-200, high=200, shape=(7,))
+        self.observation_space_comm = gym.spaces.Box(low=-200, high=200, shape=(self.n_flows+self.n_reqs,))
         self.action_space_comm = gym.spaces.Discrete(3)
 
+        if self.local_obs:
+            self.prev_obs = [None]*self.comm_agents
 
     def reset(self, full_reset = True):
         global al
         self.dones = set()
 
         obs = {}
-        st = self.get_new_state()
-        self.prev_obs = st[:]
+        if not self.local_obs:
+            st = self.get_new_state()
+            self.prev_obs = st[:]
 
         self.internal_step = 0
         self.current_sums = [0,0,0,0]
@@ -298,13 +305,15 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
         prev_actions = np.array([0 for _ in range(self.num_agents - 1)]).astype(np.int64)
 
         for i in range(self.num_agents):
-            # st.extend(self.mybigreq)
+            if self.local_obs:
+                st = self.get_new_state(i%self.comm_agents)
+                self.prev_obs[i%self.comm_agents] = st[:]
             if self.return_agent_actions:
                 # No previous actions so just pass in zeros
                 obs[self.i2id(i)] = {"curr_obs": np.array(st), "other_agent_actions": prev_actions,
                                                 "visible_agents": self.find_visible_agents(self.i2id(i))}
             else:
-                if i<4:
+                if i<self.comm_agents:
                     #comm
                     obs[self.i2id(i)] = np.array(st)
                 else:
@@ -323,9 +332,10 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
 
         self.current_sums = list(np.array(self.current_sums) + np.array([x1, x2, x4, x6]))
 
-        new_st = self.get_new_state()
-        old_st = self.prev_obs.copy()
-        self.prev_obs = new_st.copy()
+        if not self.local_obs:
+            new_st = self.get_new_state()
+            old_st = self.prev_obs.copy()
+            self.prev_obs = new_st.copy()
 
         comm_actions = []
         for i in range(self.num_agents//2):
@@ -334,14 +344,19 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
         for i in range(self.num_agents):
             temp = []
 
+            if self.local_obs:
+                new_st = self.get_new_state(i%self.comm_agents)
+                old_st = self.prev_obs[i%self.comm_agents].copy()
+                self.prev_obs[i%self.comm_agents] = new_st.copy()
+
             if self.end_episode:
-                for j in range(self.action_agents):
+                for j in range(self.comm_agents):
                     temp.append(self.current_sums[j]/self.mybigreq[j]*100)
 
             if self.local_rew:
-                rewnow = f_rew[i] - pen
+                rewnow = f_rew[i%self.comm_agents] - pen
                 if self.end_episode:
-                    rewnow += temp[i]
+                    rewnow += temp[i%self.comm_agents]
             else:
                 rewnow = sum(f_rew) - pen
                 if self.end_episode:
@@ -354,7 +369,7 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
                 obs[self.i2id(i)] = {"curr_obs": np.array(new_st), "other_agent_actions": prev_actions,"visible_agents": self.find_visible_agents(self.i2id(i))}
                 rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = rewnow, self.end_episode, {"viol":n_viol, "temp":sum(temp), "acts":action_dict, 'end':self.end_episode}
             else:
-                if i < self.action_agents:
+                if i < self.comm_agents:
                     obs[self.i2id(i)] = np.array(new_st)
                 else:
                     aug_state = old_st[:]
