@@ -29,7 +29,7 @@ class FCNet(TFModelV2):
                                            num_outputs, model_config, name)
 
         share_comm_layer = model_config["custom_options"]["share_comm_layer"]
-        id = model_config["id"]
+        id = model_config["custom_options"]["id"]
         self.inputs = tf.keras.layers.Input(
             shape=obs_space.shape, name="observations")
         layer_0 = tf.keras.layers.Dense(
@@ -65,7 +65,7 @@ class FCNet(TFModelV2):
             kernel_initializer=normc_initializer(0.01))(layer_1)
         self.base_model = tf.keras.Model(self.inputs, [layer_out, value_out])
         self.register_variables(self.base_model.variables)
-        print("FCNET", self.base_mode.variables())
+        print("FCNET", self.base_model.variables)
 
     def forward(self, input_dict, state, seq_lens):
         model_out, self._value_out = self.base_model(input_dict["obs"])
@@ -89,7 +89,7 @@ class LSTMFCNet(RecurrentTFModelV2):
                                          model_config, name)
         self.cell_size = cell_size
         share_comm_layer = model_config["custom_options"]["share_comm_layer"]
-        id = model_config["id"]
+        id = model_config["custom_options"]["id"]
         # Define input layers
         input_layer = tf.keras.layers.Input(
             shape=(None, obs_space.shape[0]), name="inputs")
@@ -130,7 +130,7 @@ class LSTMFCNet(RecurrentTFModelV2):
             inputs=[input_layer, seq_in, state_in_h, state_in_c],
             outputs=[logits, values, state_h, state_c])
         self.register_variables(self.rnn_model.variables)
-        print("LSTMFC", self.rnn_model.variables())
+        print("LSTMFC", self.rnn_model.variables)
 
     @override(RecurrentTFModelV2)
     def forward_rnn(self, inputs, state, seq_lens):

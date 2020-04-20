@@ -290,6 +290,10 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
         if self.local_obs:
             self.prev_obs = [None]*self.comm_agents
 
+    def find_visible_agents(self, agent_id):
+        visible_agents = [1 for i in range(self.action_agents-1)]
+        return np.array(visible_agents)
+
     def reset(self, full_reset = True):
         global al
         self.dones = set()
@@ -310,7 +314,13 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
                 self.prev_obs[i%self.comm_agents] = st[:]
             if self.return_agent_actions:
                 # No previous actions so just pass in zeros
-                obs[self.i2id(i)] = {"curr_obs": np.array(st), "other_agent_actions": prev_actions,
+                if i<self.comm_agents:
+                    #comm
+                    obs[self.i2id(i)] = np.array(st)
+                else:
+                    new_st = st[:]
+                    new_st.extend([-1 for i in range(self.comm_agents)])
+                    obs[self.i2id(i)] = {"curr_obs": np.array(new_st), "other_agent_actions": prev_actions,
                                                 "visible_agents": self.find_visible_agents(self.i2id(i))}
             else:
                 if i<self.comm_agents:
@@ -364,10 +374,15 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
                     rewnow+=sum(temp)
 
             if self.return_agent_actions:
-                prev_actions = np.array([action_dict[key] for key in sorted(action_dict.keys())
-                                         if key != self.i2id(i)]).astype(np.int64)
-                obs[self.i2id(i)] = {"curr_obs": np.array(new_st), "other_agent_actions": prev_actions,"visible_agents": self.find_visible_agents(self.i2id(i))}
-                rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = rewnow, self.end_episode, {"viol":n_viol, "temp":sum(temp), "acts":action_dict, 'end':self.end_episode}
+                if i < self.comm_agents:
+                    obs[self.i2id(i)] = np.array(new_st)
+                else:
+                    aug_state = old_st[:]
+                    aug_state.extend(comm_actions)
+                    obs[self.i2id(i)] = np.array(aug_state)
+                    prev_actions = np.array([only_actions[key] for key in sorted(only_actions.keys())
+                                             if (key != self.i2id(i)]).astype(np.int64)
+                    obs[self.i2id(i)] = {"curr_obs": np.array(new_st), "other_agent_actions": prev_actions,"visible_agents": self.find_visible_agents(self.i2id(i))}
             else:
                 if i < self.comm_agents:
                     obs[self.i2id(i)] = np.array(new_st)
@@ -375,7 +390,7 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
                     aug_state = old_st[:]
                     aug_state.extend(comm_actions)
                     obs[self.i2id(i)] = np.array(aug_state)
-                rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = rewnow, self.end_episode, {"viol":n_viol, "temp":sum(temp), "acts":action_dict, 'end':self.end_episode}
+            rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = rewnow, self.end_episode, {"viol":n_viol, "temp":sum(temp), "acts":action_dict, 'end':self.end_episode}
             if self.end_episode:
                 self.dones.add(i)
 

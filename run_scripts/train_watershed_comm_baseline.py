@@ -27,7 +27,7 @@ tf.compat.v1.flags.DEFINE_string(
     'algorithm', 'A3C',
     'Name of the rllib algorithm to use.')
 tf.compat.v1.flags.DEFINE_integer(
-    'num_agents', 8,
+    'num_agents', 4,
     'Number of agent policies')
 tf.compat.v1.flags.DEFINE_integer(
     'train_batch_size', 30000,
@@ -85,10 +85,10 @@ watershed_seq_comm_default_params = {
 
 def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
           num_agents, use_gpus_for_workers=False, use_gpu_for_driver=False,
-          num_workers_per_device=1, return_agent_actions=False, share_comm_layer):
+          num_workers_per_device=1, return_agent_actions=False, share_comm_layer=True):
 
 
-    elif env == 'watershed_seq_comm':
+    if env == 'watershed_seq_comm':
         def env_creator(_):
             return WatershedSeqCommEnv()
         single_env = WatershedSeqCommEnv()
@@ -109,19 +109,19 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
         if i<N_AGENTS:
             config = {
             "model": {"custom_model": "comm_fc_net", "use_lstm": False,
-                    "custom_options": {"share_comm_layer": share_comm_layer, "return_agent_actions": return_agent_actions, "cell_size": 128},
-                      "id": i%N_AGENTS}}
+                    "custom_options": {"id": i%N_AGENTS, "share_comm_layer": share_comm_layer, "return_agent_actions": return_agent_actions, "cell_size": 128},
+                      }}
             return (None, obs_comm_space, act_comm_space, config)
         else:
             config = {
             "model": {"custom_model": "lstm_fc_net", "use_lstm": False,
-                    "custom_options": {"share_comm_layer": share_comm_layer, "return_agent_actions": return_agent_actions, "cell_size": 128},
-                      "id": i%N_AGENTS}}
+                    "custom_options": {"id": i%N_AGENTS, "share_comm_layer": share_comm_layer, "return_agent_actions": return_agent_actions, "cell_size": 128},
+                      }}
             return (None, obs_space, act_space, config)
 
     # Setup PPO with an ensemble of `num_policies` different policy graphs
     policy_graphs = {}
-    for i in range(num_agents):
+    for i in range(2*num_agents):
         policy_graphs['agent-' + str(i)] = gen_policy(i)
 
     def policy_mapping_fn(agent_id):
