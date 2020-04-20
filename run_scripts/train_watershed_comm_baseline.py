@@ -6,15 +6,15 @@ from ray.tune import run_experiments
 from ray.tune.registry import register_env
 import tensorflow as tf
 
-from social_dilemmas.envs.harvest import HarvestEnv
-from social_dilemmas.envs.cleanup import CleanupEnv
-from social_dilemmas.envs.watershedComm import WatershedEnv, WatershedSeqEnv
+from social_dilemmas.envs.watershedComm import  WatershedSeqCommEnv
 
 # from models.conv_to_fc_net import ConvToFCNet
 # from models.conv_to_fcnet_v2 import ConvToFCNetv2
 from models.fc_net import FCNet
 from models.lstm_fc_net import LSTMFCNet
+from models.watershed_nets import LSTMFCNet, FCNet
 
+N_AGENTS = 4
 FLAGS = tf.compat.v1.flags.FLAGS
 
 tf.compat.v1.flags.DEFINE_string(
@@ -48,6 +48,9 @@ tf.compat.v1.flags.DEFINE_boolean(
     'use_gpus_for_workers', False,
     'Set to true to run workers on GPUs rather than CPUs')
 tf.compat.v1.flags.DEFINE_boolean(
+    'share_comm_layer', True,
+    'Set to true to have shared layers for communication')
+tf.compat.v1.flags.DEFINE_boolean(
     'use_gpu_for_driver', False,
     'Set to true to run driver on GPU rather than CPU.')
 tf.compat.v1.flags.DEFINE_float(
@@ -73,7 +76,7 @@ watershed_default_params = {
     'entropy_coeff': 0.001
 }
 
-watershed_seq_default_params = {
+watershed_seq_comm_default_params = {
     'lr_init': 0.01,
     'lr_final': 0.0001,
     'entropy_coeff': 0.001
@@ -82,24 +85,15 @@ watershed_seq_default_params = {
 
 def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
           num_agents, use_gpus_for_workers=False, use_gpu_for_driver=False,
-          num_workers_per_device=1, return_agent_actions=False):
+          num_workers_per_device=1, return_agent_actions=False, share_comm_layer):
 
-    if env == 'harvest':
+
+    elif env == 'watershed_seq_comm':
         def env_creator(_):
-            return HarvestEnv(num_agents=num_agents)
-        single_env = HarvestEnv()
-    elif env == 'watershed':
-        def env_creator(_):
-            return WatershedEnv()
-        single_env = WatershedEnv()
-    elif env == 'watershed_seq':
-        def env_creator(_):
-            return WatershedSeqEnv()
-        single_env = WatershedSeqEnv()
+            return WatershedSeqCommEnv()
+        single_env = WatershedSeqCommEnv()
     else:
-        def env_creator(_):
-            return CleanupEnv(num_agents=num_agents)
-        single_env = CleanupEnv()
+        print("No other env is supported")
 
     env_name = env + "_env"
     register_env(env_name, env_creator)
@@ -112,17 +106,17 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
 
     # Each policy can have a different configuration (including custom model)
     def gen_policy(i):
-        if i<4:
+        if i<N_AGENTS:
             config = {
             "model": {"custom_model": "comm_fc_net", "use_lstm": False,
-                    "custom_options": {"return_agent_actions": return_agent_actions, "cell_size": 128},
-                      "conv_filters": [[6, [3, 3], 1]]}}
+                    "custom_options": {"share_comm_layer": share_comm_layer, "return_agent_actions": return_agent_actions, "cell_size": 128},
+                      "id": i%N_AGENTS}}
             return (None, obs_comm_space, act_comm_space, config)
         else:
             config = {
             "model": {"custom_model": "lstm_fc_net", "use_lstm": False,
-                    "custom_options": {"return_agent_actions": return_agent_actions, "cell_size": 128},
-                      "conv_filters": [[6, [3, 3], 1]]}}
+                    "custom_options": {"share_comm_layer": share_comm_layer, "return_agent_actions": return_agent_actions, "cell_size": 128},
+                      "id": i%N_AGENTS}}
             return (None, obs_space, act_space, config)
 
     # Setup PPO with an ensemble of `num_policies` different policy graphs
@@ -194,14 +188,10 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
 
 def main(unused_argv):
     ray.init()
-    if FLAGS.env == 'harvest':
-        hparams = harvest_default_params
-    elif FLAGS.env == 'watershed':
-        hparams = watershed_default_params
-    elif FLAGS.env == 'watershed_seq':
-        hparams = watershed_seq_default_params
+    if FLAGS.env == 'watershed_seq_comm':
+        hparams = watershed_seq_comm_default_params
     else:
-        hparams = cleanup_default_params
+        print("Only watershed seq comm supported")
     alg_run, env_name, config = setup(FLAGS.env, hparams, FLAGS.algorithm,
                                       FLAGS.train_batch_size,
                                       FLAGS.num_cpus,
@@ -209,7 +199,8 @@ def main(unused_argv):
                                       FLAGS.use_gpus_for_workers,
                                       FLAGS.use_gpu_for_driver,
                                       FLAGS.num_workers_per_device,
-                                      FLAGS.return_agent_actions)
+                                      FLAGS.return_agent_actions,
+                                      FLAGS.share_comm_layer)
 
     if FLAGS.exp_name is None:
         exp_name = FLAGS.env + '_' + FLAGS.algorithm
