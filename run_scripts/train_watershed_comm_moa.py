@@ -10,13 +10,16 @@ from ray.rllib.models import ModelCatalog
 from ray.tune.registry import register_env
 
 from algorithms.a3c_causal import CausalA3CMOATrainer
-from algorithms.ppo_causal import CausalPPOMOATrainer
+from algorithms.ppo_causal import CausalPPOMOATrainer, CausalMOA_PPOPolicy
+from ray.rllib.agents.ppo.ppo_policy import PPOTFPolicy
+from ray.rllib.agents.ppo.ppo import PPOTrainer
 from algorithms.impala_causal import CausalImpalaTrainer
 from social_dilemmas.envs.harvest import HarvestEnv
 from social_dilemmas.envs.cleanup import CleanupEnv
 from social_dilemmas.envs.watershedComm import  WatershedSeqCommEnv
 from models.watershed_moa_nets import MOA_LSTM
 from models.watershed_nets import FCNet
+N_AGENTS = 4
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--exp_name', type=str, default='causal_env', help='Name experiment will be stored under')
@@ -31,8 +34,6 @@ parser.add_argument('--checkpoint_frequency', type=int, default=50,
 parser.add_argument('--training_iterations', type=int, default=50, help='Total number of steps to train for')
 parser.add_argument('--num_cpus', type=int, default=2, help='Number of available CPUs')
 parser.add_argument('--num_gpus', type=int, default=0, help='Number of available GPUs')
-parser.add_argument('--share_comm_layer', action='store_true', default=False,
-                    help='Set to true to share communication layer')
 parser.add_argument('--use_gpus_for_workers', action='store_true', default=False,
                     help='Set to true to run workers on GPUs rather than CPUs')
 parser.add_argument('--use_gpu_for_driver', action='store_true', default=False,
@@ -99,25 +100,28 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
     model_name = "moa_lstm"
     ModelCatalog.register_custom_model(model_name, MOA_LSTM)
 
+    model_name = "comm_fc_net"
+    ModelCatalog.register_custom_model(model_name, FCNet)
+
     # Each policy can have a different configuration (including custom model)
-    def gen_policy():
+    def gen_policy(i):
         if i<N_AGENTS:
             config = {
             "model": {"custom_model": "comm_fc_net",
-                    "custom_options": {"id": i%N_AGENTS, "share_comm_layer": share_comm_layer},
+                    "custom_options": {"id": i, "share_comm_layer": share_comm_layer},
                       }}
             return (None, obs_comm_space, act_comm_space, config)
         else:
             config = {
             "model": {"custom_model": "moa_lstm",
-                    "custom_options": {"id": i%N_AGENTS, "share_comm_layer": share_comm_layer},
+                    "custom_options": {"id": i, "share_comm_layer": share_comm_layer},
                       }}
             return (None, obs_space, act_space, config)
 
     # Setup PPO with an ensemble of `num_policies` different policy graphs
     policy_graphs = {}
-    for i in range(2*num_agents):
-        policy_graphs['agent-' + str(i)] = gen_policy()
+    for i in range(2*N_AGENTS):
+        policy_graphs['agent-' + str(i)] = gen_policy(i)
 
     def policy_mapping_fn(agent_id):
         return agent_id
@@ -163,11 +167,12 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
                     "policy_mapping_fn": policy_mapping_fn,
                 },
                 "model": {"custom_model": "moa_lstm", "use_lstm": False,
-                          "custom_options": {"return_agent_actions": True, "cell_size": 32,
-                                             "num_other_agents": num_agents - 1, "fcnet_hiddens": [4, 4],
+                          "custom_options": {"return_agent_actions": True, "cell_size": 128,
+                                             "num_other_agents": num_agents - 1, "fcnet_hiddens": [32, 32],
                                              "train_moa_only_when_visible": tune.grid_search([True]),
                                              "moa_weight": 10,
-                                             }},
+                                             },
+                          "conv_filters": [[6, [3, 3], 1]]},
                 "num_other_agents": num_agents - 1,
                 "moa_weight": hparams['moa_weight'],
                 "train_moa_only_when_visible": tune.grid_search([True]),
@@ -221,14 +226,10 @@ if __name__=='__main__':
         ray.init(local_mode=True)
     else:
         ray.init()
-    if args.env == 'harvest':
-        hparams = harvest_default_params
-    elif args.env == 'watershed':
-        hparams = watershed_default_params
-    elif args.env == 'watershed_seq':
-        hparams = watershed_seq_default_params
+    if args.env == 'watershed_seq_comm':
+        hparams = watershed_seq_comm_default_params
     else:
-        hparams = cleanup_default_params
+        print("not supported")
     alg_run, env_name, config = setup(args.env, hparams, args.algorithm,
                                       args.train_batch_size,
                                       args.num_cpus,
@@ -236,7 +237,7 @@ if __name__=='__main__':
                                       args.num_envs_per_worker,
                                       args.use_gpus_for_workers,
                                       args.use_gpu_for_driver,
-                                      args.num_workers_per_device, args.share_comm_layer)
+                                      args.num_workers_per_device)
 
     if args.exp_name is None:
         exp_name = args.env + '_' + args.algorithm
@@ -276,4 +277,4 @@ if __name__=='__main__':
     if args.use_s3:
         exp_dict['upload_dir'] = s3_string
 
-    tune.run(**exp_dict, queue_trials=True, reuse_actors = True)
+    tune.run(**exp_dict, queue_trials=True)

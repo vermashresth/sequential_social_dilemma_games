@@ -30,6 +30,13 @@ class FCNet(TFModelV2):
 
         share_comm_layer = model_config["custom_options"]["share_comm_layer"]
         id = model_config["custom_options"]["id"]
+
+        self.id = model_config["custom_options"]["id"]
+        if self.id>=4:
+            self.causal=True
+        else:
+            self.causal = False
+            
         self.inputs = tf.keras.layers.Input(
             shape=obs_space.shape, name="observations")
         layer_0 = tf.keras.layers.Dense(

@@ -277,9 +277,9 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
 
         if self.return_agent_actions:
             # We will append on some extra values to represent the actions of other agents
-            self.observation_space = gym.spaces.Dict({"curr_obs": gym.spaces.Box(low=-200, high=200, shape=(7,)),
-                         "other_agent_actions": gym.spaces.Box(low=0, high=10, shape=(self.num_agents - 1, ), dtype=np.int32,),
-                         "visible_agents": gym.spaces.Box(low=0, high=self.num_agents, shape=(self.num_agents - 1,), dtype=np.int32)})
+            self.observation_space = gym.spaces.Dict({"curr_obs": gym.spaces.Box(low=-200, high=200, shape=(self.n_flows+self.n_reqs+ self.comm_agents,)),
+                         "other_agent_actions": gym.spaces.Box(low=0, high=10, shape=(self.action_agents - 1, ), dtype=np.int32,),
+                         "visible_agents": gym.spaces.Box(low=0, high=self.num_agents, shape=(self.action_agents - 1,), dtype=np.int32)})
         else:
             self.observation_space = gym.spaces.Box(low=-200, high=200, shape=(self.n_flows+self.n_reqs+ self.comm_agents,))
 
@@ -306,7 +306,7 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
         self.internal_step = 0
         self.current_sums = [0,0,0,0]
         self.end_episode = False
-        prev_actions = np.array([0 for _ in range(self.num_agents - 1)]).astype(np.int64)
+        prev_actions = np.array([0 for _ in range(self.action_agents - 1)]).astype(np.int64)
 
         for i in range(self.num_agents):
             if self.local_obs:
@@ -379,10 +379,9 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
                 else:
                     aug_state = old_st[:]
                     aug_state.extend(comm_actions)
-                    obs[self.i2id(i)] = np.array(aug_state)
                     prev_actions = np.array([only_actions[key] for key in sorted(only_actions.keys())
-                                             if (key != self.i2id(i)]).astype(np.int64)
-                    obs[self.i2id(i)] = {"curr_obs": np.array(new_st), "other_agent_actions": prev_actions,"visible_agents": self.find_visible_agents(self.i2id(i))}
+                                             if key != self.i2id(i)]).astype(np.int64)
+                    obs[self.i2id(i)] = {"curr_obs": np.array(aug_state), "other_agent_actions": prev_actions,"visible_agents": self.find_visible_agents(self.i2id(i))}
             else:
                 if i < self.comm_agents:
                     obs[self.i2id(i)] = np.array(new_st)

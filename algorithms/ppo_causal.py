@@ -35,8 +35,9 @@ def loss_with_moa(policy, model, dist_class, train_batch):
     logits, state = model.from_batch(train_batch)
     action_dist = dist_class(logits, model)
 
-    moa_loss = setup_moa_loss(logits, model, policy, train_batch)
-    policy.moa_loss = moa_loss.total_loss
+    if policy.model.causal:
+        moa_loss = setup_moa_loss(logits, model, policy, train_batch)
+        policy.moa_loss = moa_loss.total_loss
 
     if state:
         max_seq_len = tf.reduce_max(train_batch["seq_lens"])
@@ -66,23 +67,25 @@ def loss_with_moa(policy, model, dist_class, train_batch):
         vf_loss_coeff=policy.config["vf_loss_coeff"],
         use_gae=policy.config["use_gae"],
         model_config=policy.config["model"])
-
-    policy.loss_obj.loss += moa_loss.total_loss
+    if policy.model.causal:
+        policy.loss_obj.loss += moa_loss.total_loss
     return policy.loss_obj.loss
 
 
 def extra_fetches(policy):
     """Adds value function, logits, moa predictions of counterfactual actions to experience train_batches."""
     ppo_fetches = vf_preds_and_logits_fetches(policy)
-    ppo_fetches.update(causal_fetches(policy))
+    if policy.model.causal:
+        ppo_fetches.update(causal_fetches(policy))
     return ppo_fetches
 
 
 def extra_stats(policy, train_batch):
     base_stats = kl_and_loss_stats(policy, train_batch)
-    base_stats["total_influence"] = train_batch["total_influence"]
-    base_stats['reward_without_influence'] = train_batch['reward_without_influence']
-    base_stats['moa_loss'] = policy.moa_loss / policy.moa_weight
+    if policy.model.causal:
+        base_stats["total_influence"] = train_batch["total_influence"]
+        base_stats['reward_without_influence'] = train_batch['reward_without_influence']
+        base_stats['moa_loss'] = policy.moa_loss / policy.moa_weight
     return base_stats
 
 
@@ -91,9 +94,9 @@ def postprocess_ppo_causal(policy,
                         other_agent_batches=None,
                         episode=None):
     """Adds the policy logits, VF preds, and advantages to the trajectory."""
-
-    batch = causal_postprocess_trajectory(policy, sample_batch)
-    batch = postprocess_ppo_gae(policy, batch)
+    if policy.model.causal:
+        sample_batch = causal_postprocess_trajectory(policy, sample_batch)
+    batch = postprocess_ppo_gae(policy, sample_batch)
     return batch
 
 
@@ -117,7 +120,8 @@ def setup_mixins(policy, obs_space, action_space, config):
     EntropyCoeffSchedule.__init__(policy, config["entropy_coeff"],
                                   config["entropy_coeff_schedule"])
     LearningRateSchedule.__init__(policy, config["lr"], config["lr_schedule"])
-    setup_causal_mixins(policy, obs_space, action_space, config)
+    if policy.model.causal:
+        setup_causal_mixins(policy, obs_space, action_space, config)
 
 
 CausalMOA_PPOPolicy = build_tf_policy(
