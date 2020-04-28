@@ -16,7 +16,7 @@ class LSTMFCNet(RecurrentTFModelV2):
                  num_outputs,
                  model_config,
                  name,
-                 hiddens_size=256,
+                 hiddens_size=128,
                  cell_size=64):
         super(LSTMFCNet, self).__init__(obs_space, action_space, num_outputs,
                                          model_config, name)

@@ -22,7 +22,7 @@ from models.watershed_nets import FCNet
 N_AGENTS = 4
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--exp_name', type=str, default='causal_env', help='Name experiment will be stored under')
+parser.add_argument('--exp_name', type=str, default='comm_moa', help='Name experiment will be stored under')
 parser.add_argument('--env', type=str, default='cleanup', help='Name of the environment to rollout. Can be '
                                                                'cleanup or harvest.')
 parser.add_argument('--algorithm', type=str, default='PPO', help='Name of the rllib algorithm to use.')
@@ -55,6 +55,11 @@ parser.add_argument('--use_s3', action='store_true', default=False,
 parser.add_argument('--grid_search', action='store_true', default=False,
                     help='If true run a grid search over relevant hyperparams')
 
+parser.add_argument('--local_obs', action='store_true', default=False,
+                    help='If true we only use local observation')
+parser.add_argument('--local_rew', action='store_true', default=False,
+                    help='If true we return indicidual rewards to agents')
+
 harvest_default_params = {
     'lr_init': 0.00136,
     'lr_final': 0.000028,
@@ -81,7 +86,7 @@ watershed_seq_comm_default_params = {
 
 def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
           num_agents, num_envs_per_worker, use_gpus_for_workers=False, use_gpu_for_driver=False,
-          num_workers_per_device=1, share_comm_layer = True):
+          num_workers_per_device=1, local_rew=False, local_obs=False, share_comm_layer = True):
 
     if env == 'watershed_seq_comm':
         def env_creator(_):
@@ -169,8 +174,8 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
                     "policy_mapping_fn": policy_mapping_fn,
                 },
                 "model": {"custom_model": "moa_lstm", "use_lstm": False,
-                          "custom_options": {"return_agent_actions": True, "cell_size": 128,
-                                             "num_other_agents": num_agents - 1, "fcnet_hiddens": [32, 32],
+                          "custom_options": {"return_agent_actions": True,
+                                             "num_other_agents": num_agents - 1,
                                              "train_moa_only_when_visible": tune.grid_search([True]),
                                              "moa_weight": 10,
                                              },
@@ -239,12 +244,15 @@ if __name__=='__main__':
                                       args.num_envs_per_worker,
                                       args.use_gpus_for_workers,
                                       args.use_gpu_for_driver,
-                                      args.num_workers_per_device, args.share_comm_layer)
+                                      args.num_workers_per_device,
+                                      args.local_rew,
+                                      args.local_obs, args.share_comm_layer)
 
-    if args.exp_name is None:
-        exp_name = args.env + '_' + args.algorithm
-    else:
-        exp_name = args.exp_name
+    # if args.exp_name is None:
+    #     exp_name = args.env + '_' + args.algorithm
+    # else:
+    #     exp_name = args.exp_name + '_' + args.algorithm
+    exp_name = "{}-{}-{}-local_rew-{}-local_obs-{}".format(args.env, args.exp_name, args.algorithm, args.local_rew, args.local_obs)
     print('Commencing experiment', exp_name)
 
     config['env'] = env_name

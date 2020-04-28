@@ -12,11 +12,18 @@ tf = try_import_tf()
 
 N_AGENTS = 4
 shared_layers = []
+##FC
+# Input -16 -16 out
+# Value Input 16-16-out
+
+# LSTMFC
+#Input -16 -16 LSTM(64) - out
+#Value Input -16 -16 LSTM(64) - out
 
 for i in range(N_AGENTS):
     shared_layers.append(tf.keras.layers.Dense(
-        6,
-        name="my_layer1",
+        16,
+        name="my_layer1"+str(i),
         activation=tf.nn.relu,
         kernel_initializer=normc_initializer(1.0)))
 
@@ -27,20 +34,23 @@ class FCNet(TFModelV2):
                  name):
         super(FCNet, self).__init__(obs_space, action_space,
                                            num_outputs, model_config, name)
+        try:
+            share_comm_layer = model_config["custom_options"]["share_comm_layer"]
+            id = model_config["custom_options"]["id"]
 
-        share_comm_layer = model_config["custom_options"]["share_comm_layer"]
-        id = model_config["custom_options"]["id"]
+            self.id = model_config["custom_options"]["id"]
+            if self.id>=4:
+                self.causal=True
+            else:
+                self.causal = False
+        except:
+            share_comm_layer = False
 
-        self.id = model_config["custom_options"]["id"]
-        if self.id>=4:
-            self.causal=True
-        else:
-            self.causal = False
-            
+
         self.inputs = tf.keras.layers.Input(
             shape=obs_space.shape, name="observations")
         layer_0 = tf.keras.layers.Dense(
-            4,
+            16,
             name="my_layer0",
             activation=tf.nn.relu,
             kernel_initializer=normc_initializer(1.0))(self.inputs)
@@ -49,22 +59,22 @@ class FCNet(TFModelV2):
             new_layer = shared_layers[id]
         else:
             new_layer = tf.keras.layers.Dense(
-                6,
+                16,
                 name="my_layer1",
                 activation=tf.nn.relu,
                 kernel_initializer=normc_initializer(1.0))
         layer_1 = new_layer(layer_0)
 
-        layer_2 = tf.keras.layers.Dense(
-            4,
-            name="my_layer2",
-            activation=tf.nn.relu,
-            kernel_initializer=normc_initializer(1.0))(layer_1)
+        # layer_2 = tf.keras.layers.Dense(
+        #     4,
+        #     name="my_layer2",
+        #     activation=tf.nn.relu,
+        #     kernel_initializer=normc_initializer(1.0))(layer_1)
         layer_out = tf.keras.layers.Dense(
             num_outputs,
             name="my_out",
             activation=None,
-            kernel_initializer=normc_initializer(0.01))(layer_2)
+            kernel_initializer=normc_initializer(0.01))(layer_1)
         value_out = tf.keras.layers.Dense(
             1,
             name="value_out",
@@ -90,13 +100,16 @@ class LSTMFCNet(RecurrentTFModelV2):
                  num_outputs,
                  model_config,
                  name,
-                 hiddens_size=4,
-                 cell_size=64):
+                 hiddens_size=16,
+                 cell_size=128):
         super(LSTMFCNet, self).__init__(obs_space, action_space, num_outputs,
                                          model_config, name)
         self.cell_size = cell_size
-        share_comm_layer = model_config["custom_options"]["share_comm_layer"]
-        id = model_config["custom_options"]["id"]
+        try:
+            share_comm_layer = model_config["custom_options"]["share_comm_layer"]
+            id = model_config["custom_options"]["id"]
+        except:
+            share_comm_layer = False
         # Define input layers
         input_layer = tf.keras.layers.Input(
             shape=(None, obs_space.shape[0]), name="inputs")
@@ -106,13 +119,13 @@ class LSTMFCNet(RecurrentTFModelV2):
 
         # Preprocess observation with a hidden layer and send to LSTM cell
         dense0 = tf.keras.layers.Dense(
-            hiddens_size, activation=tf.nn.relu, name="dense0")(input_layer)
+            16, activation=tf.nn.relu, name="dense0")(input_layer)
 
         if share_comm_layer:
             new_layer = shared_layers[id]
         else:
             new_layer = tf.keras.layers.Dense(
-                6,
+                16,
                 name="my_layer1",
                 activation=tf.nn.relu,
                 kernel_initializer=normc_initializer(1.0))

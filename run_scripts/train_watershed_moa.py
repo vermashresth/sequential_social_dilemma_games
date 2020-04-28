@@ -15,10 +15,11 @@ from algorithms.impala_causal import CausalImpalaTrainer
 from social_dilemmas.envs.harvest import HarvestEnv
 from social_dilemmas.envs.cleanup import CleanupEnv
 from social_dilemmas.envs.watershedComm import WatershedEnv, WatershedSeqEnv
-from models.moa_fc_model import MOA_LSTM
+
+from models.watershed_moa_nets import MOA_LSTM
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--exp_name', type=str, default='causal_env', help='Name experiment will be stored under')
+parser.add_argument('--exp_name', type=str, default='moa', help='Name experiment will be stored under')
 parser.add_argument('--env', type=str, default='cleanup', help='Name of the environment to rollout. Can be '
                                                                'cleanup or harvest.')
 parser.add_argument('--algorithm', type=str, default='PPO', help='Name of the rllib algorithm to use.')
@@ -49,6 +50,11 @@ parser.add_argument('--use_s3', action='store_true', default=False,
 parser.add_argument('--grid_search', action='store_true', default=False,
                     help='If true run a grid search over relevant hyperparams')
 
+parser.add_argument('--local_obs', action='store_true', default=False,
+                    help='If true we only use local observation')
+parser.add_argument('--local_rew', action='store_true', default=False,
+                    help='If true we return indicidual rewards to agents')
+
 harvest_default_params = {
     'lr_init': 0.00136,
     'lr_final': 0.000028,
@@ -75,24 +81,18 @@ watershed_seq_default_params = {
 
 def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
           num_agents, num_envs_per_worker, use_gpus_for_workers=False, use_gpu_for_driver=False,
-          num_workers_per_device=1):
+          num_workers_per_device=1, local_rew=False, local_obs=False):
 
-    if env == 'harvest':
+    if env == 'watershed':
         def env_creator(_):
-            return HarvestEnv(num_agents=num_agents, return_agent_actions=True)
-        single_env = HarvestEnv(num_agents=num_agents, return_agent_actions=True)
-    elif env == 'watershed':
-        def env_creator(_):
-            return WatershedEnv(return_agent_actions=True)
-        single_env = WatershedEnv(return_agent_actions=True)
+            return WatershedEnv(return_agent_actions=True, local_rew=local_rew, local_obs=local_obs)
+        single_env = WatershedEnv(return_agent_actions=True, local_rew=local_rew, local_obs=local_obs)
     elif env == 'watershed_seq':
         def env_creator(_):
-            return WatershedSeqEnv(return_agent_actions=True)
-        single_env = WatershedSeqEnv(return_agent_actions=True)
+            return WatershedSeqEnv(return_agent_actions=True, local_rew=local_rew, local_obs=local_obs)
+        single_env = WatershedSeqEnv(return_agent_actions=True, local_rew=local_rew, local_obs=local_obs)
     else:
-        def env_creator(_):
-            return CleanupEnv(num_agents=num_agents, return_agent_actions=True)
-        single_env = CleanupEnv(num_agents=num_agents, return_agent_actions=True)
+        print("Only watershed and watershed_seq supported")
 
     env_name = env + "_env"
     register_env(env_name, env_creator)
@@ -156,8 +156,8 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
                     "policy_mapping_fn": policy_mapping_fn,
                 },
                 "model": {"custom_model": "moa_lstm", "use_lstm": False,
-                          "custom_options": {"return_agent_actions": True, "cell_size": 128,
-                                             "num_other_agents": num_agents - 1, "fcnet_hiddens": [32, 32],
+                          "custom_options": {"return_agent_actions": True,
+                                             "num_other_agents": num_agents - 1,
                                              "train_moa_only_when_visible": tune.grid_search([True]),
                                              "moa_weight": 10,
                                              },
@@ -230,12 +230,16 @@ if __name__=='__main__':
                                       args.num_envs_per_worker,
                                       args.use_gpus_for_workers,
                                       args.use_gpu_for_driver,
-                                      args.num_workers_per_device)
+                                      args.num_workers_per_device,
+                                      args.local_rew,
+                                      args.local_obs)
 
-    if args.exp_name is None:
-        exp_name = args.env + '_' + args.algorithm
-    else:
-        exp_name = args.exp_name
+    # if args.exp_name is None:
+    #     exp_name = args.env + '_' + args.algorithm
+    # else:
+    #     exp_name = "{}-{}-{}-local_rew-{}-local_obs-{}".format(args.exp_name, args.env, args.algorithm, args.local_rew, args.local_obs
+    exp_name = "{}-{}-{}-local_rew-{}-local_obs-{}".format(args.env, args.exp_name, args.algorithm, args.local_rew, args.local_obs)
+
     print('Commencing experiment', exp_name)
 
     config['env'] = env_name

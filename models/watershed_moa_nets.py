@@ -11,6 +11,9 @@ from ray.rllib.policy.sample_batch import SampleBatch
 
 tf = try_import_tf()
 
+# keras rnn Input - 16 - 16 - LSTM(64) - Out
+
+# moa lstm input -16-16 kerasrnn
 class KerasRNN(RecurrentTFModelV2):
     """Maps the input direct to an LSTM cell"""
 
@@ -20,7 +23,7 @@ class KerasRNN(RecurrentTFModelV2):
                  num_outputs,
                  model_config,
                  name,
-                 cell_size=64,
+                 cell_size=128,
                  use_value_fn=False,
                  append_others_actions=False):
         super(KerasRNN, self).__init__(obs_space, action_space, num_outputs,
@@ -43,7 +46,9 @@ class KerasRNN(RecurrentTFModelV2):
             name = "action_logits"
 
         # Add the fully connected layers
-        hiddens = model_config["custom_options"].get("fcnet_hiddens")
+
+        hiddens = [16, 16]
+
         last_layer = flat_layer
         i = 1
         activation = get_activation_fn(model_config.get("fcnet_activation"))
@@ -129,11 +134,14 @@ class MOA_LSTM(RecurrentTFModelV2):
                  name):
         super(MOA_LSTM, self).__init__(obs_space, action_space, num_outputs,
                                        model_config, name)
-        self.id = model_config["custom_options"]["id"]
-        if self.id>=4:
-            self.causal=True
-        else:
-            self.causal = False
+        try:
+            self.id = model_config["custom_options"]["id"]
+            if self.id>=4:
+                self.causal=True
+            else:
+                self.causal = False
+        except:
+            self.causal = True
         self.obs_space = obs_space
 
         # The inputs of the shared trunk. We will concatenate the observation space with shared info about the
@@ -144,29 +152,27 @@ class MOA_LSTM(RecurrentTFModelV2):
         # Build the vision network here
         # TODO(@evinitsky) replace this with obs_space.original_space
         total_obs = obs_space.shape[0]
-        print("###\n###\n{}\n###\n###".format(total_obs))
         curr_obs = total_obs - 2 * self.num_other_agents
-        print("###\n###\n{}\n###\n###".format(curr_obs))
         curr_box = Box(low=-200.0, high=200.0, shape=(curr_obs,), dtype=np.float32)
         # an extra none for the time dimension
         inputs = tf.keras.layers.Input(
             shape=(None,) + curr_box.shape, name="observations")
-        print("###\n###\n{}\n###\n###".format(inputs.shape))
         # A temp config with custom_model false so that we can get a basic vision model with the desired filters
         # Build the CNN layer
         last_layer = inputs
         activation = get_activation_fn(model_config.get("conv_activation"))
         filters = model_config.get("conv_filters")
-        for i in range(2):
+
+        for i in range(1):
             last_layer = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(
-                4,
+                16,
                 activation=tf.nn.relu,
                 kernel_initializer=normc_initializer(1.0),
                 name="fc{}".format(i)))(last_layer)
 
         # should be batch x time x height x width x channel
         fc_out = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(
-            4,
+            16,
             activation=tf.nn.relu,
             kernel_initializer=normc_initializer(1.0),
             name="fc{}".format(i+1)))(last_layer)
@@ -174,7 +180,6 @@ class MOA_LSTM(RecurrentTFModelV2):
         self.base_model = tf.keras.Model(inputs, [fc_out])
         self.register_variables(self.base_model.variables)
         self.base_model.summary()
-        print("####\n####\n ", fc_out.shape[2:])
         # now output two heads, one for action selection and one for the prediction of other agents
         inner_obs_space = Box(low=-1, high=1, shape=fc_out.shape[2:], dtype=np.float32)
 

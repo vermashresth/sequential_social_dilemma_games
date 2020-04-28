@@ -8,17 +8,22 @@ import tensorflow as tf
 
 from social_dilemmas.envs.harvest import HarvestEnv
 from social_dilemmas.envs.cleanup import CleanupEnv
-from social_dilemmas.envs.watershed import WatershedEnv, WatershedSeqEnv
+from social_dilemmas.envs.watershedComm import WatershedEnv, WatershedSeqEnv
 
 # from models.conv_to_fc_net import ConvToFCNet
 # from models.conv_to_fcnet_v2 import ConvToFCNetv2
-from models.fc_net import FCNet
-from models.lstm_fc_net import LSTMFCNet
+# from models.fc_net import FCNet
+
+# Using LSTMFC Net
+# Input - 16n - LSTM(64) - Output
+# from models.lstm_fc_net import LSTMFCNet
+
+from models.watershed_nets import LSTMFCNet
 
 FLAGS = tf.compat.v1.flags.FLAGS
 
 tf.compat.v1.flags.DEFINE_string(
-    'exp_name', None,
+    'exp_name', Baseline,
     'Name of the ray_results experiment directory where results are stored.')
 tf.compat.v1.flags.DEFINE_string(
     'env', 'cleanup',
@@ -56,6 +61,12 @@ tf.compat.v1.flags.DEFINE_float(
 tf.compat.v1.flags.DEFINE_boolean(
     'return_agent_actions', 0,
     'If true we return the previous actions of all the agents')
+tf.compat.v1.flags.DEFINE_boolean(
+    'local_obs', 0,
+    'If true we only use local observation')
+tf.compat.v1.flags.DEFINE_boolean(
+    'local_rew', 0,
+    'If true we return indicidual rewards to agents')
 
 harvest_default_params = {
     'lr_init': 0.00136,
@@ -82,24 +93,18 @@ watershed_seq_default_params = {
 
 def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
           num_agents, use_gpus_for_workers=False, use_gpu_for_driver=False,
-          num_workers_per_device=1, return_agent_actions=False):
+          num_workers_per_device=1, return_agent_actions=False, local_rew=False, local_obs=False):
 
-    if env == 'harvest':
+    if env == 'watershed':
         def env_creator(_):
-            return HarvestEnv(num_agents=num_agents)
-        single_env = HarvestEnv()
-    elif env == 'watershed':
-        def env_creator(_):
-            return WatershedEnv()
-        single_env = WatershedEnv()
+            return WatershedEnv(return_agent_actions=return_agent_actions, local_rew=local_rew, local_obs=local_obs)
+        single_env = WatershedEnv(return_agent_actions=return_agent_actions, local_rew=local_rew, local_obs=local_obs)
     elif env == 'watershed_seq':
         def env_creator(_):
-            return WatershedSeqEnv()
-        single_env = WatershedSeqEnv()
+            return WatershedSeqEnv(return_agent_actions=return_agent_actions, local_rew=local_rew, local_obs=local_obs)
+        single_env = WatershedSeqEnv(return_agent_actions=return_agent_actions, local_rew=local_rew, local_obs=local_obs)
     else:
-        def env_creator(_):
-            return CleanupEnv(num_agents=num_agents)
-        single_env = CleanupEnv()
+        print("Only watershed and watershed_seq supported")
 
     env_name = env + "_env"
     register_env(env_name, env_creator)
@@ -171,7 +176,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
                     "policy_mapping_fn": tune.function(policy_mapping_fn),
                 },
                 "model": {"custom_model": "lstm_fc_net", "use_lstm": False,
-                        "custom_options": {"return_agent_actions": return_agent_actions, "cell_size": 128},
+                        "custom_options": {"return_agent_actions": return_agent_actions},
                           "conv_filters": [[6, [3, 3], 1]]}
 
     })
@@ -195,12 +200,16 @@ def main(unused_argv):
                                       FLAGS.use_gpus_for_workers,
                                       FLAGS.use_gpu_for_driver,
                                       FLAGS.num_workers_per_device,
-                                      FLAGS.return_agent_actions)
+                                      FLAGS.return_agent_actions,
+                                      FLAGS.local_rew,
+                                      FLAGS.local_obs)
 
-    if FLAGS.exp_name is None:
-        exp_name = FLAGS.env + '_' + FLAGS.algorithm
-    else:
-        exp_name = FLAGS.exp_name
+    # if FLAGS.exp_name is None:
+    #     exp_name = FLAGS.env + '_' + FLAGS.algorithm
+    # else:
+    #     exp_name = FLAGS.exp_name
+    exp_name = "{}-{}-{}-local_rew-{}-local_obs-{}".format(FLAGS.env, FLAGS.exp_name, FLAGS.algorithm, FLAGS.local_rew, FLAGS.local_obs)
+
     print('Commencing experiment', exp_name)
 
     config['env'] = env_name

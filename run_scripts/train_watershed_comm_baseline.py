@@ -10,15 +10,16 @@ from social_dilemmas.envs.watershedComm import  WatershedSeqCommEnv
 
 # from models.conv_to_fc_net import ConvToFCNet
 # from models.conv_to_fcnet_v2 import ConvToFCNetv2
-from models.fc_net import FCNet
-from models.lstm_fc_net import LSTMFCNet
+
+# from models.fc_net import FCNet
+# from models.lstm_fc_net import LSTMFCNet
 from models.watershed_nets import LSTMFCNet, FCNet
 
 N_AGENTS = 4
 FLAGS = tf.compat.v1.flags.FLAGS
 
 tf.compat.v1.flags.DEFINE_string(
-    'exp_name', None,
+    'exp_name', "comm_baseline",
     'Name of the ray_results experiment directory where results are stored.')
 tf.compat.v1.flags.DEFINE_string(
     'env', 'cleanup',
@@ -59,6 +60,12 @@ tf.compat.v1.flags.DEFINE_float(
 tf.compat.v1.flags.DEFINE_boolean(
     'return_agent_actions', 0,
     'If true we return the previous actions of all the agents')
+tf.compat.v1.flags.DEFINE_boolean(
+    'local_obs', 0,
+    'If true we only use local observation')
+tf.compat.v1.flags.DEFINE_boolean(
+    'local_rew', 0,
+    'If true we return indicidual rewards to agents')
 
 harvest_default_params = {
     'lr_init': 0.00136,
@@ -85,15 +92,15 @@ watershed_seq_comm_default_params = {
 
 def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
           num_agents, use_gpus_for_workers=False, use_gpu_for_driver=False,
-          num_workers_per_device=1, return_agent_actions=False, share_comm_layer=True):
+          num_workers_per_device=1, return_agent_actions=False, local_rew=False, local_obs=False, share_comm_layer=True):
 
 
     if env == 'watershed_seq_comm':
         def env_creator(_):
-            return WatershedSeqCommEnv()
-        single_env = WatershedSeqCommEnv()
+            return WatershedSeqCommEnv(return_agent_actions=return_agent_actions, local_rew=local_rew, local_obs=local_obs)
+        single_env = WatershedSeqCommEnv(return_agent_actions=return_agent_actions, local_rew=local_rew, local_obs=local_obs)
     else:
-        print("No other env is supported")
+        print("only watershed_seq_comm supported")
 
     env_name = env + "_env"
     register_env(env_name, env_creator)
@@ -109,13 +116,13 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
         if i<N_AGENTS:
             config = {
             "model": {"custom_model": "comm_fc_net", "use_lstm": False,
-                    "custom_options": {"id": i%N_AGENTS, "share_comm_layer": share_comm_layer, "return_agent_actions": return_agent_actions, "cell_size": 128},
+                    "custom_options": {"id": i%N_AGENTS, "share_comm_layer": share_comm_layer, "return_agent_actions": return_agent_actions},
                       }}
             return (None, obs_comm_space, act_comm_space, config)
         else:
             config = {
             "model": {"custom_model": "lstm_fc_net", "use_lstm": False,
-                    "custom_options": {"id": i%N_AGENTS, "share_comm_layer": share_comm_layer, "return_agent_actions": return_agent_actions, "cell_size": 128},
+                    "custom_options": {"id": i%N_AGENTS, "share_comm_layer": share_comm_layer, "return_agent_actions": return_agent_actions},
                       }}
             return (None, obs_space, act_space, config)
 
@@ -200,12 +207,17 @@ def main(unused_argv):
                                       FLAGS.use_gpu_for_driver,
                                       FLAGS.num_workers_per_device,
                                       FLAGS.return_agent_actions,
+                                      FLAGS.local_rew,
+                                      FLAGS.local_obs,
                                       FLAGS.share_comm_layer)
 
-    if FLAGS.exp_name is None:
-        exp_name = FLAGS.env + '_' + FLAGS.algorithm
-    else:
-        exp_name = FLAGS.exp_name
+    # if FLAGS.exp_name is None:
+    #     exp_name = FLAGS.env + '_' + FLAGS.algorithm
+    # else:
+    #     exp_name = FLAGS.exp_name
+
+    exp_name = "{}-{}-{}-local_rew-{}-local_obs-{}".format(FLAGS.env, FLAGS.exp_name, FLAGS.algorithm, FLAGS.local_rew, FLAGS.local_obs)
+
     print('Commencing experiment', exp_name)
 
     config['env'] = env_name
