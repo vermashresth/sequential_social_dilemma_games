@@ -36,6 +36,8 @@ parser.add_argument('--num_cpus', type=int, default=2, help='Number of available
 parser.add_argument('--num_gpus', type=int, default=0, help='Number of available GPUs')
 parser.add_argument('--use_gpus_for_workers', action='store_true', default=False,
                     help='Set to true to run workers on GPUs rather than CPUs')
+parser.add_argument('--share_comm_layer', action='store_true', default=False,
+                    help='Set to true to share comm layer')
 parser.add_argument('--use_gpu_for_driver', action='store_true', default=False,
                     help='Set to true to run driver on GPU rather than CPU.')
 parser.add_argument('--num_workers_per_device', type=float, default=1,
@@ -79,7 +81,7 @@ watershed_seq_comm_default_params = {
 
 def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
           num_agents, num_envs_per_worker, use_gpus_for_workers=False, use_gpu_for_driver=False,
-          num_workers_per_device=1, share_comm_layer = False):
+          num_workers_per_device=1, share_comm_layer = True):
 
     if env == 'watershed_seq_comm':
         def env_creator(_):
@@ -237,7 +239,7 @@ if __name__=='__main__':
                                       args.num_envs_per_worker,
                                       args.use_gpus_for_workers,
                                       args.use_gpu_for_driver,
-                                      args.num_workers_per_device)
+                                      args.num_workers_per_device, args.share_comm_layer)
 
     if args.exp_name is None:
         exp_name = args.env + '_' + args.algorithm

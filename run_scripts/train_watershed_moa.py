@@ -14,7 +14,7 @@ from algorithms.ppo_causal import CausalPPOMOATrainer
 from algorithms.impala_causal import CausalImpalaTrainer
 from social_dilemmas.envs.harvest import HarvestEnv
 from social_dilemmas.envs.cleanup import CleanupEnv
-from social_dilemmas.envs.watershed import WatershedEnv, WatershedSeqEnv
+from social_dilemmas.envs.watershedComm import WatershedEnv, WatershedSeqEnv
 from models.moa_fc_model import MOA_LSTM
 
 parser = argparse.ArgumentParser()

@@ -48,7 +48,7 @@ tf.compat.v1.flags.DEFINE_boolean(
     'use_gpus_for_workers', False,
     'Set to true to run workers on GPUs rather than CPUs')
 tf.compat.v1.flags.DEFINE_boolean(
-    'share_comm_layer', True,
+    'share_comm_layer', False,
     'Set to true to have shared layers for communication')
 tf.compat.v1.flags.DEFINE_boolean(
     'use_gpu_for_driver', False,

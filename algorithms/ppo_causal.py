@@ -96,6 +96,14 @@ def postprocess_ppo_causal(policy,
     """Adds the policy logits, VF preds, and advantages to the trajectory."""
     if policy.model.causal:
         sample_batch = causal_postprocess_trajectory(policy, sample_batch)
+    else:
+        if policy.loss_initialized():
+          id = policy.model.id
+          other_agent = "agent-{}".format((id+4))
+          other_batch = other_agent_batches[other_agent][1]
+          other_with_influence = causal_postprocess_trajectory(policy, other_batch)
+          # print(id, other_agent_batches[other_agent][1].keys())
+          sample_batch['rewards'] +=  other_with_influence['total_influence']*policy.curr_influence_weight
     batch = postprocess_ppo_gae(policy, sample_batch)
     return batch
 
@@ -120,8 +128,7 @@ def setup_mixins(policy, obs_space, action_space, config):
     EntropyCoeffSchedule.__init__(policy, config["entropy_coeff"],
                                   config["entropy_coeff_schedule"])
     LearningRateSchedule.__init__(policy, config["lr"], config["lr_schedule"])
-    if policy.model.causal:
-        setup_causal_mixins(policy, obs_space, action_space, config)
+    setup_causal_mixins(policy, obs_space, action_space, config)
 
 
 CausalMOA_PPOPolicy = build_tf_policy(

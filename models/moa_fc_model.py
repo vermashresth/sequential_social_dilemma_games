@@ -129,7 +129,7 @@ class MOA_LSTM(RecurrentTFModelV2):
                  name):
         super(MOA_LSTM, self).__init__(obs_space, action_space, num_outputs,
                                        model_config, name)
-
+        self.causal = True
         self.obs_space = obs_space
 
         # The inputs of the shared trunk. We will concatenate the observation space with shared info about the
