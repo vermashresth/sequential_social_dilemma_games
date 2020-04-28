@@ -25,7 +25,7 @@ parser.add_argument('--algorithm', type=str, default='PPO', help='Name of the rl
 parser.add_argument('--num_agents', type=int, default=4, help='Number of agent policies')
 parser.add_argument('--train_batch_size', type=int, default=26000,
                     help='Size of the total dataset over which one epoch is computed.')
-parser.add_argument('--checkpoint_frequency', type=int, default=50,
+parser.add_argument('--checkpoint_frequency', type=int, default=10,
                     help='Number of steps before a checkpoint is saved.')
 parser.add_argument('--training_iterations', type=int, default=50, help='Total number of steps to train for')
 parser.add_argument('--num_cpus', type=int, default=2, help='Number of available CPUs')
@@ -264,6 +264,7 @@ if __name__=='__main__':
             },
             'checkpoint_freq': args.checkpoint_frequency,
             "config": config,
+            "local_dir": "/content/gdrive/My Drive/watershed_exps"
         }
 
 

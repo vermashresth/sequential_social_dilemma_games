@@ -24,7 +24,7 @@ tf.compat.v1.flags.DEFINE_string(
     'env', 'cleanup',
     'Name of the environment to rollout. Can be cleanup or harvest.')
 tf.compat.v1.flags.DEFINE_string(
-    'algorithm', 'A3C',
+    'algorithm', 'PPO',
     'Name of the rllib algorithm to use.')
 tf.compat.v1.flags.DEFINE_integer(
     'num_agents', 5,
@@ -33,7 +33,7 @@ tf.compat.v1.flags.DEFINE_integer(
     'train_batch_size', 30000,
     'Size of the total dataset over which one epoch is computed.')
 tf.compat.v1.flags.DEFINE_integer(
-    'checkpoint_frequency', 20,
+    'checkpoint_frequency', 10,
     'Number of steps before a checkpoint is saved.')
 tf.compat.v1.flags.DEFINE_integer(
     'training_iterations', 10000,
@@ -66,7 +66,7 @@ cleanup_default_params = {
     'lr_init': 0.00126,
     'lr_final': 0.000012,
     'entropy_coeff': .00176}
-    
+
 watershed_default_params = {
     'lr_init': 0.01,
     'lr_final': 0.0001,
@@ -203,17 +203,21 @@ def main(unused_argv):
         exp_name = FLAGS.exp_name
     print('Commencing experiment', exp_name)
 
-    run_experiments({
-        exp_name: {
-            "run": alg_run,
-            "env": env_name,
+    config['env'] = env_name
+    exp_dict = {
+            'name': exp_name,
+            'run_or_experiment': alg_run,
             "stop": {
-                "training_iteration": FLAGS.training_iterations
+                "training_iteration":  FLAGS.training_iterations
             },
             'checkpoint_freq': FLAGS.checkpoint_frequency,
             "config": config,
+            "local_dir": "/content/gdrive/My Drive/watershed_exps"
         }
-    })
+
+
+
+    tune.run(**exp_dict, queue_trials=True)
 
 
 if __name__ == '__main__':
