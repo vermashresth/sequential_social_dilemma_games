@@ -1,3 +1,4 @@
+import argparse
 import ray
 from ray import tune
 from ray.rllib.agents.registry import get_agent_class
@@ -20,53 +21,33 @@ from social_dilemmas.envs.watershedComm import WatershedEnv, WatershedSeqEnv
 
 from models.watershed_nets import LSTMFCNet
 
-FLAGS = tf.compat.v1.flags.FLAGS
+parser = argparse.ArgumentParser()
+parser.add_argument('--exp_name', type=str, default='baseline', help='Name experiment will be stored under')
+parser.add_argument('--env', type=str, default='cleanup', help='Name of the environment to rollout. Can be ')
+parser.add_argument('--algorithm', type=str, default='PPO', help='Name of the rllib algorithm to use.')
+parser.add_argument('--num_agents', type=int, default=4, help='Number of agent policies')
+parser.add_argument('--train_batch_size', type=int, default=26000,
+                    help='Size of the total dataset over which one epoch is computed.')
+parser.add_argument('--checkpoint_frequency', type=int, default=10,
+                    help='Number of steps before a checkpoint is saved.')
+parser.add_argument('--training_iterations', type=int, default=10000, help='Total number of steps to train for')
+parser.add_argument('--num_cpus', type=int, default=2, help='Number of available CPUs')
+parser.add_argument('--num_gpus', type=int, default=0, help='Number of available GPUs')
+parser.add_argument('--use_gpus_for_workers', action='store_true', default=False,
+                    help='Set to true to run workers on GPUs rather than CPUs')
+parser.add_argument('--use_gpu_for_driver', action='store_true', default=False,
+                    help='Set to true to run driver on GPU rather than CPU.')
+parser.add_argument('--num_workers_per_device', type=float, default=1,
+                    help='Number of workers to place on a single device (CPU or GPU)')
 
-tf.compat.v1.flags.DEFINE_string(
-    'exp_name', Baseline,
-    'Name of the ray_results experiment directory where results are stored.')
-tf.compat.v1.flags.DEFINE_string(
-    'env', 'cleanup',
-    'Name of the environment to rollout. Can be cleanup or harvest.')
-tf.compat.v1.flags.DEFINE_string(
-    'algorithm', 'PPO',
-    'Name of the rllib algorithm to use.')
-tf.compat.v1.flags.DEFINE_integer(
-    'num_agents', 5,
-    'Number of agent policies')
-tf.compat.v1.flags.DEFINE_integer(
-    'train_batch_size', 30000,
-    'Size of the total dataset over which one epoch is computed.')
-tf.compat.v1.flags.DEFINE_integer(
-    'checkpoint_frequency', 10,
-    'Number of steps before a checkpoint is saved.')
-tf.compat.v1.flags.DEFINE_integer(
-    'training_iterations', 10000,
-    'Total number of steps to train for')
-tf.compat.v1.flags.DEFINE_integer(
-    'num_cpus', 2,
-    'Number of available CPUs')
-tf.compat.v1.flags.DEFINE_integer(
-    'num_gpus', 1,
-    'Number of available GPUs')
-tf.compat.v1.flags.DEFINE_boolean(
-    'use_gpus_for_workers', False,
-    'Set to true to run workers on GPUs rather than CPUs')
-tf.compat.v1.flags.DEFINE_boolean(
-    'use_gpu_for_driver', False,
-    'Set to true to run driver on GPU rather than CPU.')
-tf.compat.v1.flags.DEFINE_float(
-    'num_workers_per_device', 1,
-    'Number of workers to place on a single device (CPU or GPU)')
-tf.compat.v1.flags.DEFINE_boolean(
-    'return_agent_actions', 0,
-    'If true we return the previous actions of all the agents')
-tf.compat.v1.flags.DEFINE_boolean(
-    'local_obs', 0,
-    'If true we only use local observation')
-tf.compat.v1.flags.DEFINE_boolean(
-    'local_rew', 0,
-    'If true we return indicidual rewards to agents')
+parser.add_argument('--return_agent_actions', action='store_true', default=False,
+                    help='If true we only use local observation')
+
+parser.add_argument('--local_obs', action='store_true', default=False,
+                    help='If true we only use local observation')
+parser.add_argument('--local_rew', action='store_true', default=False,
+                    help='If true we return indicidual rewards to agents')
+
 
 harvest_default_params = {
     'lr_init': 0.00136,
@@ -180,35 +161,55 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
                           "conv_filters": [[6, [3, 3], 1]]}
 
     })
+
+    if args.algorithm == "PPO":
+        config.update({"num_sgd_iter": 10,
+                       "train_batch_size": train_batch_size,
+                       "sgd_minibatch_size": 128,
+                       "vf_loss_coeff": 1e-4
+                       })
+    elif args.algorithm == "A3C":
+        config.update({"sample_batch_size": 50,
+                       "vf_loss_coeff": 0.1
+                       })
+    elif args.algorithm == "IMPALA":
+        config.update({"train_batch_size": train_batch_size,
+                       "sample_batch_size": 50,
+                       "vf_loss_coeff": 0.1
+                       })
+    else:
+        sys.exit("The only available algorithms are A3C and PPO")
+
     return algorithm, env_name, config
 
 
-def main(unused_argv):
+if __name__=='__main__':
+    args = parser.parse_args()
     ray.init()
-    if FLAGS.env == 'harvest':
+    if args.env == 'harvest':
         hparams = harvest_default_params
-    elif FLAGS.env == 'watershed':
+    elif args.env == 'watershed':
         hparams = watershed_default_params
-    elif FLAGS.env == 'watershed_seq':
+    elif args.env == 'watershed_seq':
         hparams = watershed_seq_default_params
     else:
         hparams = cleanup_default_params
-    alg_run, env_name, config = setup(FLAGS.env, hparams, FLAGS.algorithm,
-                                      FLAGS.train_batch_size,
-                                      FLAGS.num_cpus,
-                                      FLAGS.num_gpus, FLAGS.num_agents,
-                                      FLAGS.use_gpus_for_workers,
-                                      FLAGS.use_gpu_for_driver,
-                                      FLAGS.num_workers_per_device,
-                                      FLAGS.return_agent_actions,
-                                      FLAGS.local_rew,
-                                      FLAGS.local_obs)
+    alg_run, env_name, config = setup(args.env, hparams, args.algorithm,
+                                      args.train_batch_size,
+                                      args.num_cpus,
+                                      args.num_gpus, args.num_agents,
+                                      args.use_gpus_for_workers,
+                                      args.use_gpu_for_driver,
+                                      args.num_workers_per_device,
+                                      args.return_agent_actions,
+                                      args.local_rew,
+                                      args.local_obs)
 
-    # if FLAGS.exp_name is None:
-    #     exp_name = FLAGS.env + '_' + FLAGS.algorithm
+    # if args.exp_name is None:
+    #     exp_name = args.env + '_' + args.algorithm
     # else:
-    #     exp_name = FLAGS.exp_name
-    exp_name = "{}-{}-{}-local_rew-{}-local_obs-{}".format(FLAGS.env, FLAGS.exp_name, FLAGS.algorithm, FLAGS.local_rew, FLAGS.local_obs)
+    #     exp_name = args.exp_name
+    exp_name = "{}-{}-{}-local_rew-{}-local_obs-{}".format(args.env, args.exp_name, args.algorithm, args.local_rew, args.local_obs)
 
     print('Commencing experiment', exp_name)
 
@@ -217,9 +218,9 @@ def main(unused_argv):
             'name': exp_name,
             'run_or_experiment': alg_run,
             "stop": {
-                "training_iteration":  FLAGS.training_iterations
+                "training_iteration":  args.training_iterations
             },
-            'checkpoint_freq': FLAGS.checkpoint_frequency,
+            'checkpoint_freq': args.checkpoint_frequency,
             "config": config,
             "local_dir": "/content/gdrive/My Drive/watershed_exps"
         }
@@ -227,7 +228,3 @@ def main(unused_argv):
 
 
     tune.run(**exp_dict, queue_trials=True)
-
-
-if __name__ == '__main__':
-    tf.compat.v1.app.run(main)

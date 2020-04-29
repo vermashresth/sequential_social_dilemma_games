@@ -27,11 +27,11 @@ parser.add_argument('--env', type=str, default='cleanup', help='Name of the envi
                                                                'cleanup or harvest.')
 parser.add_argument('--algorithm', type=str, default='PPO', help='Name of the rllib algorithm to use.')
 parser.add_argument('--num_agents', type=int, default=4, help='Number of agent policies')
-parser.add_argument('--train_batch_size', type=int, default=26000,
+parser.add_argument('--train_batch_size', type=int, default=2600,
                     help='Size of the total dataset over which one epoch is computed.')
 parser.add_argument('--checkpoint_frequency', type=int, default=10,
                     help='Number of steps before a checkpoint is saved.')
-parser.add_argument('--training_iterations', type=int, default=50, help='Total number of steps to train for')
+parser.add_argument('--training_iterations', type=int, default=100, help='Total number of steps to train for')
 parser.add_argument('--num_cpus', type=int, default=2, help='Number of available CPUs')
 parser.add_argument('--num_gpus', type=int, default=0, help='Number of available GPUs')
 parser.add_argument('--use_gpus_for_workers', action='store_true', default=False,
@@ -196,7 +196,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
     if args.algorithm == "PPO":
         config.update({"num_sgd_iter": 10,
                        "train_batch_size": train_batch_size,
-                       "sgd_minibatch_size": 500,
+                       "sgd_minibatch_size": 128,
                        "vf_loss_coeff": 1e-4
                        })
     elif args.algorithm == "A3C":
@@ -236,7 +236,7 @@ if __name__=='__main__':
     if args.env == 'watershed_seq_comm':
         hparams = watershed_seq_comm_default_params
     else:
-        print("not supported")
+        print("Only watershed_seq_comm env supported")
     alg_run, env_name, config = setup(args.env, hparams, args.algorithm,
                                       args.train_batch_size,
                                       args.num_cpus,

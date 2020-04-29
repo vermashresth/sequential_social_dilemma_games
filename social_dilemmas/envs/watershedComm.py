@@ -43,7 +43,7 @@ class WatershedEnv(MultiAgentEnv):
         self.agentID2real = {0:1, 1:2, 2:4, 3:6}
         if self.return_agent_actions:
             # We will append on some extra values to represent the actions of other agents
-            self.observation_space = gym.spaces.Dict({"curr_obs": gym.spaces.Box(low=-200, high=200, shape=(7,)),
+            self.observation_space = gym.spaces.Dict({"curr_obs": gym.spaces.Box(low=-200, high=200, shape=(self.n_flows + self.n_reqs,)),
                          "other_agent_actions": gym.spaces.Box(low=0, high=10, shape=(self.num_agents - 1, ), dtype=np.int32,),
                          "visible_agents": gym.spaces.Box(low=0, high=self.num_agents, shape=(self.num_agents - 1,), dtype=np.int32)})
         else:

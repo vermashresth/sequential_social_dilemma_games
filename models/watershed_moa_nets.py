@@ -99,6 +99,7 @@ class KerasRNN(RecurrentTFModelV2):
                 inputs=inputs,
                 outputs=[logits, state_h, state_c])
 
+
     @override(RecurrentTFModelV2)
     def forward_rnn(self, input_dict, state, seq_lens):
         try:
@@ -179,26 +180,29 @@ class MOA_LSTM(RecurrentTFModelV2):
 
         self.base_model = tf.keras.Model(inputs, [fc_out])
         self.register_variables(self.base_model.variables)
-        self.base_model.summary()
+
+        print("MOA Trunk Base", self.base_model.variables )
+        # self.base_model.summary()
         # now output two heads, one for action selection and one for the prediction of other agents
         inner_obs_space = Box(low=-1, high=1, shape=fc_out.shape[2:], dtype=np.float32)
 
-        cell_size = model_config["custom_options"].get("cell_size")
+        # cell_size = model_config["custom_options"].get("cell_size")
         self.actions_model = KerasRNN(inner_obs_space, action_space, num_outputs,
-                                      model_config, "actions", cell_size=cell_size, use_value_fn=True)
-
+                                      model_config, "actions", use_value_fn=True)
+        print("Action RNN",self.actions_model.rnn_model.variables)
         # predicts the actions of all the agents besides itself
         # create a new input reader per worker
         self.train_moa_only_when_visible = model_config['custom_options']['train_moa_only_when_visible']
         self.moa_weight = model_config['custom_options']['moa_weight']
 
         self.moa_model = KerasRNN(inner_obs_space, action_space, self.num_other_agents * num_outputs,
-                                  model_config, "moa_model", cell_size=cell_size, use_value_fn=False,
+                                  model_config, "moa_model", use_value_fn=False,
                                   append_others_actions=True)
+        print("MOA RNN",self.moa_model.rnn_model.variables)
         self.register_variables(self.actions_model.rnn_model.variables)
         self.register_variables(self.moa_model.rnn_model.variables)
-        self.actions_model.rnn_model.summary()
-        self.moa_model.rnn_model.summary()
+        # self.actions_model.rnn_model.summary()
+        # self.moa_model.rnn_model.summary()
 
     @override(ModelV2)
     def forward(self, input_dict, state, seq_lens):
