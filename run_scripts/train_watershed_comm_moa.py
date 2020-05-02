@@ -16,7 +16,7 @@ from ray.rllib.agents.ppo.ppo import PPOTrainer
 from algorithms.impala_causal import CausalImpalaTrainer
 from social_dilemmas.envs.harvest import HarvestEnv
 from social_dilemmas.envs.cleanup import CleanupEnv
-from social_dilemmas.envs.watershedComm import  WatershedSeqCommEnv
+from social_dilemmas.envs.watershedOrderedComm import  WatershedSeqCommEnv
 from models.watershed_moa_nets import MOA_LSTM
 from models.watershed_nets import FCNet
 N_AGENTS = 4
@@ -73,13 +73,13 @@ cleanup_default_params = {
     'moa_weight': 15.007}
 
 watershed_default_params = {
-    'lr_init': 0.01,
+    'lr_init': 0.001,
     'lr_final': 0.0001,
     'entropy_coeff': 0.001,
     'moa_weight': 10.911}
 
 watershed_seq_comm_default_params = {
-    'lr_init': 0.01,
+    'lr_init': 0.001,
     'lr_final': 0.0001,
     'entropy_coeff': 0.001,
     'moa_weight': 10.911}
@@ -90,8 +90,8 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
 
     if env == 'watershed_seq_comm':
         def env_creator(_):
-            return WatershedSeqCommEnv(return_agent_actions=True)
-        single_env = WatershedSeqCommEnv(return_agent_actions=True)
+            return WatershedSeqCommEnv(return_agent_actions=True, local_rew=local_rew, local_obs = local_obs)
+        single_env = WatershedSeqCommEnv(return_agent_actions=True, local_rew=local_rew, local_obs = local_obs)
     else:
         print("Only watershed seq comm supported")
 

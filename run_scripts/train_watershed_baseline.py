@@ -9,7 +9,7 @@ import tensorflow as tf
 
 from social_dilemmas.envs.harvest import HarvestEnv
 from social_dilemmas.envs.cleanup import CleanupEnv
-from social_dilemmas.envs.watershedComm import WatershedEnv, WatershedSeqEnv
+from social_dilemmas.envs.watershedOrderedComm import WatershedEnv, WatershedSeqEnv
 
 # from models.conv_to_fc_net import ConvToFCNet
 # from models.conv_to_fcnet_v2 import ConvToFCNetv2
@@ -26,11 +26,11 @@ parser.add_argument('--exp_name', type=str, default='baseline', help='Name exper
 parser.add_argument('--env', type=str, default='cleanup', help='Name of the environment to rollout. Can be ')
 parser.add_argument('--algorithm', type=str, default='PPO', help='Name of the rllib algorithm to use.')
 parser.add_argument('--num_agents', type=int, default=4, help='Number of agent policies')
-parser.add_argument('--train_batch_size', type=int, default=26000,
+parser.add_argument('--train_batch_size', type=int, default=2600,
                     help='Size of the total dataset over which one epoch is computed.')
 parser.add_argument('--checkpoint_frequency', type=int, default=10,
                     help='Number of steps before a checkpoint is saved.')
-parser.add_argument('--training_iterations', type=int, default=10000, help='Total number of steps to train for')
+parser.add_argument('--training_iterations', type=int, default=100, help='Total number of steps to train for')
 parser.add_argument('--num_cpus', type=int, default=2, help='Number of available CPUs')
 parser.add_argument('--num_gpus', type=int, default=0, help='Number of available GPUs')
 parser.add_argument('--use_gpus_for_workers', action='store_true', default=False,
@@ -66,7 +66,7 @@ watershed_default_params = {
 }
 
 watershed_seq_default_params = {
-    'lr_init': 0.01,
+    'lr_init': 0.001,
     'lr_final': 0.0001,
     'entropy_coeff': 0.001
 }

@@ -7,7 +7,7 @@ from ray.tune import run_experiments
 from ray.tune.registry import register_env
 import tensorflow as tf
 
-from social_dilemmas.envs.watershedComm import  WatershedSeqCommEnv
+from social_dilemmas.envs.watershedOrderedComm import  WatershedSeqCommEnv
 
 # from models.conv_to_fc_net import ConvToFCNet
 # from models.conv_to_fcnet_v2 import ConvToFCNetv2
@@ -22,7 +22,7 @@ parser.add_argument('--exp_name', type=str, default='baseline', help='Name exper
 parser.add_argument('--env', type=str, default='cleanup', help='Name of the environment to rollout. Can be ')
 parser.add_argument('--algorithm', type=str, default='PPO', help='Name of the rllib algorithm to use.')
 parser.add_argument('--num_agents', type=int, default=4, help='Number of agent policies')
-parser.add_argument('--train_batch_size', type=int, default=26000,
+parser.add_argument('--train_batch_size', type=int, default=2600,
                     help='Size of the total dataset over which one epoch is computed.')
 parser.add_argument('--checkpoint_frequency', type=int, default=10,
                     help='Number of steps before a checkpoint is saved.')
@@ -39,6 +39,8 @@ parser.add_argument('--num_workers_per_device', type=float, default=1,
 parser.add_argument('--return_agent_actions', action='store_true', default=False,
                     help='If true we only use local observation')
 
+parser.add_argument('--share_comm_layer', action='store_true', default=False,
+                    help='If true we share layers')
 parser.add_argument('--local_obs', action='store_true', default=False,
                     help='If true we only use local observation')
 parser.add_argument('--local_rew', action='store_true', default=False,
@@ -62,7 +64,7 @@ watershed_default_params = {
 }
 
 watershed_seq_comm_default_params = {
-    'lr_init': 0.01,
+    'lr_init': 0.001,
     'lr_final': 0.0001,
     'entropy_coeff': 0.001
 }

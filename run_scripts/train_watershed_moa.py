@@ -14,7 +14,7 @@ from algorithms.ppo_causal import CausalPPOMOATrainer
 from algorithms.impala_causal import CausalImpalaTrainer
 from social_dilemmas.envs.harvest import HarvestEnv
 from social_dilemmas.envs.cleanup import CleanupEnv
-from social_dilemmas.envs.watershedComm import WatershedEnv, WatershedSeqEnv
+from social_dilemmas.envs.watershedOrderedComm import WatershedEnv, WatershedSeqEnv
 
 from models.watershed_moa_nets import MOA_LSTM
 
@@ -68,13 +68,13 @@ cleanup_default_params = {
     'moa_weight': 15.007}
 
 watershed_default_params = {
-    'lr_init': 0.01,
+    'lr_init': 0.001,
     'lr_final': 0.0001,
     'entropy_coeff': 0.001,
     'moa_weight': 10.911}
 
 watershed_seq_default_params = {
-    'lr_init': 0.01,
+    'lr_init': 0.001,
     'lr_final': 0.0001,
     'entropy_coeff': 0.001,
     'moa_weight': 10.911}
