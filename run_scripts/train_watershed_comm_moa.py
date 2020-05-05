@@ -18,7 +18,7 @@ from social_dilemmas.envs.harvest import HarvestEnv
 from social_dilemmas.envs.cleanup import CleanupEnv
 from social_dilemmas.envs.watershedOrderedComm import  WatershedSeqCommEnv
 from models.watershed_moa_nets import MOA_LSTM
-from models.watershed_nets import FCNet
+from models.watershed_nets import LSTMFCNet, FCNet
 N_AGENTS = 4
 
 parser = argparse.ArgumentParser()
@@ -107,14 +107,17 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
     model_name = "moa_lstm"
     ModelCatalog.register_custom_model(model_name, MOA_LSTM)
 
-    model_name = "comm_fc_net"
-    ModelCatalog.register_custom_model(model_name, FCNet)
+    model_name = "lstm_fc_net"
+    ModelCatalog.register_custom_model(model_name, LSTMFCNet)
+
+    # model_name = "comm_fc_net"
+    # ModelCatalog.register_custom_model(model_name, FCNet)
 
     # Each policy can have a different configuration (including custom model)
     def gen_policy(i):
         if i<N_AGENTS:
             config = {
-            "model": {"custom_model": "comm_fc_net",
+            "model": {"custom_model": "lstm_fc_net",
                     "custom_options": {"id": i, "share_comm_layer": share_comm_layer},
                       }}
             return (None, obs_comm_space, act_comm_space, config)

@@ -48,7 +48,7 @@ class WatershedEnv(MultiAgentEnv):
                          "visible_agents": gym.spaces.Box(low=0, high=self.num_agents, shape=(self.num_agents - 1,), dtype=np.int32)})
         else:
             self.observation_space = gym.spaces.Box(low=-250, high=250, shape=(self.n_flows + self.n_reqs + self.my_flow,))
-        self.action_space = gym.spaces.Box(low=0, high = 1, shape=(1,))
+        self.action_space = gym.spaces.Discrete(10)
 
         self.total_phases = 5
         self.current_phase = 0
@@ -89,11 +89,11 @@ class WatershedEnv(MultiAgentEnv):
         if id==0:
             self.incoming_flows[id] = self.Q1
         elif id==1:
-            self.incoming_flows[id] = self.incoming_flows[0] * (1 - action_dict[self.i2id(0)])
+            self.incoming_flows[id] = self.incoming_flows[0] * (1 - action_dict[self.i2id(0)]*0.1)
         elif id==2:
             self.incoming_flows[id] = self.Q2
         elif id==3:
-            self.incoming_flows[id] = self.incoming_flows[2] * (1 - action_dict[self.i2id(2)]) + (self.incoming_flows[1]+self.S) * (action_dict[self.i2id(1)])
+            self.incoming_flows[id] = self.incoming_flows[2] * (1 - action_dict[self.i2id(2)]*0.1) + (self.incoming_flows[1]+self.S) * (action_dict[self.i2id(1)]*0.1)
         else:
             print("Wrong ID")
 
@@ -152,12 +152,12 @@ class WatershedEnv(MultiAgentEnv):
         # v[7] = al[5] - x6
         # v[8] = al[6] - x2 -x3 + x6
 
-        v[0] = al[1] - x1
-        v[1] = al[2] - self.incoming_flows[1]
-        v[2] = al[3] - x3
-        v[3] = al[4] - x4
-        v[4] = al[5] - x5
-        v[5] = al[6] - x6
+        # v[0] = al[1] - x1
+        # v[1] = al[2] - self.incoming_flows[1]
+        # v[2] = al[3] - x3
+        # v[3] = al[4] - x4
+        # v[4] = al[5] - x5
+        # v[5] = al[6] - x6
         pen = 0
         n_viol = [0, 0, 0, 0, 0, 0]
         t = np.random.randint(100)
@@ -168,14 +168,14 @@ class WatershedEnv(MultiAgentEnv):
         #     print(self.incoming_flows)
         #     print("Q1, Q2, S", self.Q1, self.Q2, self.S)
         #     print(x1+x4+x6+x5+(self.incoming_flows[1]+self.S)*(1-self.action_hist[self.i2id(1)]*0.1), self.Q1+self.Q2+self.S)
-        for i in range(6):
-            if v[i]>0:
-                n_viol[i]=1
-                pen += (v[i]+1)*100
-                # if t<3:
-                #     print(i, "viol",)
-            # if t<3:
-            #     print("end")
+        # for i in range(6):
+        #     if v[i]>0:
+        #         n_viol[i]=1
+        #         pen += (v[i]+1)*100
+        #         # if t<3:
+        #         #     print(i, "viol",)
+        #     # if t<3:
+        #     #     print("end")
         return pen, n_viol
 
     def get_observation_space(self, t=0):
@@ -192,7 +192,8 @@ class WatershedEnv(MultiAgentEnv):
 
     def cal_rewards(self, action_dict):
         actions = list(action_dict.values())
-        x1, x2, x4, x6 = list(np.array(actions))
+        # x1 = list(np.array(actions)*0.1)
+        x1, x2, x4, x6 = 30, 30,30,30
         # x1 = al[1]+(self.Q1-al[2]-al[1])*x1
         # x4 = al[3]+(self.Q2-al[4]-al[3])*x4
         # x2 = (self.S+self.Q1-al[1])*x2
@@ -200,9 +201,9 @@ class WatershedEnv(MultiAgentEnv):
 
         x1 = self.incoming_flows[0]*x1
         # x2 = self.incoming_flows[1]+(self.S)*x2
-        x2 = (self.incoming_flows[1]+self.S)*x2
-        x4 = self.incoming_flows[2]*x4
-        x6 = self.incoming_flows[3]*x6
+        # x2 = (self.incoming_flows[1]+self.S)*x2
+        # x4 = self.incoming_flows[2]*x4
+        # x6 = self.incoming_flows[3]*x6
 
         x3 = self.Q2 - x4
         x5 = x2 + x3 - x6
@@ -219,9 +220,6 @@ class WatershedEnv(MultiAgentEnv):
     def step(self, action_dict):
         obs, rew, done, info = {}, {}, {}, {}
 
-        # make action shape normal
-        for agent_id in action_dict:
-            action_dict[agent_id] = action_dict[agent_id][0]
         # Actions are stored in action history
         for agent_id in action_dict:
             self.action_hist[agent_id] = action_dict[agent_id]
@@ -332,11 +330,6 @@ class WatershedSeqEnv(WatershedEnv):
         return obs
 
     def step(self, action_dict):
-
-        # make action shape normal
-        for agent_id in action_dict:
-            action_dict[agent_id] = action_dict[agent_id][0]
-
         # Actions are stored in action history
         for agent_id in action_dict:
             self.action_hist[agent_id] = action_dict[agent_id]
@@ -414,8 +407,8 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
     def __init__(self, *args, **kwargs):
         super(WatershedSeqCommEnv, self).__init__(*args, **kwargs)
 
-        self.comm_agents = 4
-        self.action_agents = 4
+        self.comm_agents = 2
+        self.action_agents = 2
         self.num_agents = self.comm_agents + self.action_agents
 
         if self.return_agent_actions:
@@ -433,9 +426,9 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
         if self.local_obs:
             self.prev_obs = [None]*self.comm_agents
 
-        self.total_phases = 8
+        self.total_phases = 4
         self.current_phase = 0
-        self.agent_in_phases = [[0], [1], [2], [3], [4],[5],[6],[7]]
+        self.agent_in_phases = [[0], [1],[2],[3]]
 
     def find_visible_agents(self, agent_id):
         visible_agents = [1 for i in range(self.action_agents-1)]
@@ -449,11 +442,11 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
             if id==0:
                 self.incoming_flows[id] = self.Q1
             elif id==1:
-                self.incoming_flows[id] = self.incoming_flows[0] * (1 - action_dict[self.i2id(offset+0)])
+                self.incoming_flows[id] = self.incoming_flows[0] * (1 - action_dict[self.i2id(offset+0)]*0.1)
             elif id==2:
                 self.incoming_flows[id] = self.Q2
             elif id==3:
-                self.incoming_flows[id] = self.incoming_flows[2] * (1 - action_dict[self.i2id(offset+2)]) + (self.incoming_flows[1]+self.S) * (action_dict[self.i2id(offset+1)])
+                self.incoming_flows[id] = self.incoming_flows[2] * (1 - action_dict[self.i2id(offset+2)]*0.1) + (self.incoming_flows[1]+self.S) * (action_dict[self.i2id(offset+1)]*0.1)
             else:
                 print("Wrong ID")
 
@@ -504,10 +497,6 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
         return obs
 
     def step(self, action_dict):
-        # make action shape normal
-        for agent_id in action_dict:
-            if int(agent_id[-1])>=self.comm_agents:
-              action_dict[agent_id] = action_dict[agent_id][0]
         # Actions are stored in action history
         for agent_id in action_dict:
             self.action_hist[agent_id] = action_dict[agent_id]

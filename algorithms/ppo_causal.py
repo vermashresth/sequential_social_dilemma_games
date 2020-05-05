@@ -88,22 +88,77 @@ def extra_stats(policy, train_batch):
         base_stats['moa_loss'] = policy.moa_loss / policy.moa_weight
     return base_stats
 
-
+saved_batch_item = {}
+random_batch_item = {}
 def postprocess_ppo_causal(policy,
                         sample_batch,
                         other_agent_batches=None,
                         episode=None):
     """Adds the policy logits, VF preds, and advantages to the trajectory."""
+    global saved_batch_item
+    global random_batch_item
     if policy.model.causal:
         sample_batch = causal_postprocess_trajectory(policy, sample_batch)
     else:
         if policy.loss_initialized():
           id = policy.model.id
-          other_agent = "agent-{}".format((id+4))
-          other_batch = other_agent_batches[other_agent][1]
-          other_with_influence = causal_postprocess_trajectory(policy, other_batch)
-          # print(id, other_agent_batches[other_agent][1].keys())
-          sample_batch['rewards'] +=  other_with_influence['total_influence']*policy.curr_influence_weight
+          other_agent = "agent-{}".format((id+NUM_AGENTS))
+          if other_agent in other_agent_batches.keys():
+
+            other_batch = other_agent_batches[other_agent][1]
+            other_with_influence = causal_postprocess_trajectory(policy, other_batch)
+            # print(id, other_agent_batches[other_agent][1].keys())
+            if len(sample_batch['rewards'])==len(other_with_influence['total_influence']):
+              sample_batch['rewards'] +=  other_with_influence['total_influence']*policy.curr_influence_weight
+
+            elif len(sample_batch['rewards'])>len(other_with_influence['total_influence']):
+              #Case 1, reward more than influence
+              #Lets just remve the last value and save it
+              # print("case 1")
+              # print(sample_batch['rewards'], other_with_influence['total_influence'])
+              for key in sample_batch:
+                saved_batch_item[key] = sample_batch[key][-1]
+                sample_batch[key] = sample_batch[key][:-1]
+
+              # print(saved_batch_item)
+              # print(sample_batch['rewards'], other_with_influence['total_influence'])
+              sample_batch['rewards'] +=  other_with_influence['total_influence']*policy.curr_influence_weight
+
+              random_val = np.random.randint(len(sample_batch['rewards']))
+              for key in sample_batch:
+                random_batch_item[key] = np.array([sample_batch[key][random_val]])
+            else:
+              #Case 2, reward is less than influence
+              #Push saved reward value in the begginig
+              # print("case 2")
+              # print(sample_batch['rewards'], other_with_influence['total_influence'])
+              # print("saved item: ", saved_batch_item)
+              for key in sample_batch:
+                sample_batch[key] = np.concatenate(([saved_batch_item[key]], sample_batch[key]))
+
+              # print(sample_batch['rewards'], other_with_influence['total_influence'])
+              # print()
+              sample_batch['rewards'] +=  other_with_influence['total_influence']*policy.curr_influence_weight
+
+              random_val = np.random.randint(len(sample_batch['rewards']))
+              for key in sample_batch:
+                random_batch_item[key] = np.array([sample_batch[key][random_val]])
+          else:
+            #Case 3 when only 1 extra reward
+            # print("case 3")
+            # print("earlier: ", sample_batch)
+            # print("random: ",random_batch_item)
+            # print(sample_batch['rewards'], other_with_influence['total_influence'])
+            for key in sample_batch:
+                saved_batch_item[key] = sample_batch[key][-1]
+            # print(saved_batch_item)
+            # print(sample_batch['rewards'], other_with_influence['total_influence'])
+            # print()
+            sample_batch = random_batch_item.copy()
+            # print("after: ", sample_batch)
+
+
+
     batch = postprocess_ppo_gae(policy, sample_batch)
     return batch
 
