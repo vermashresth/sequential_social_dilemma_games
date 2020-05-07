@@ -11,6 +11,8 @@ from social_dilemmas.envs.harvest import HarvestEnv
 from social_dilemmas.envs.cleanup import CleanupEnv
 from social_dilemmas.envs.watershedOrderedComm import WatershedEnv, WatershedSeqEnv
 
+from social_dilemmas.envs.watershedLogging import on_episode_end, on_episode_step, on_episode_end
+
 # from models.conv_to_fc_net import ConvToFCNet
 # from models.conv_to_fcnet_v2 import ConvToFCNetv2
 # from models.fc_net import FCNet
@@ -21,11 +23,12 @@ from social_dilemmas.envs.watershedOrderedComm import WatershedEnv, WatershedSeq
 
 from models.watershed_nets import LSTMFCNet
 
+NUM_AGENTS = 4
 parser = argparse.ArgumentParser()
 parser.add_argument('--exp_name', type=str, default='baseline', help='Name experiment will be stored under')
 parser.add_argument('--env', type=str, default='cleanup', help='Name of the environment to rollout. Can be ')
 parser.add_argument('--algorithm', type=str, default='PPO', help='Name of the rllib algorithm to use.')
-parser.add_argument('--num_agents', type=int, default=4, help='Number of agent policies')
+parser.add_argument('--num_agents', type=int, default=NUM_AGENTS, help='Number of agent policies')
 parser.add_argument('--train_batch_size', type=int, default=2600,
                     help='Size of the total dataset over which one epoch is computed.')
 parser.add_argument('--checkpoint_frequency', type=int, default=10,
@@ -158,7 +161,12 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
                 },
                 "model": {"custom_model": "lstm_fc_net", "use_lstm": False,
                         "custom_options": {"return_agent_actions": return_agent_actions},
-                          "conv_filters": [[6, [3, 3], 1]]}
+                          "conv_filters": [[6, [3, 3], 1]]},
+                "callbacks": {
+                    "on_episode_start": on_episode_start,
+                    "on_episode_step": on_episode_step,
+                    "on_episode_end": on_episode_end,
+                },
 
     })
 

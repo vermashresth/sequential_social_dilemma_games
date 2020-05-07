@@ -19,14 +19,18 @@ from social_dilemmas.envs.cleanup import CleanupEnv
 from social_dilemmas.envs.watershedOrderedComm import  WatershedSeqCommEnv
 from models.watershed_moa_nets import MOA_LSTM
 from models.watershed_nets import LSTMFCNet, FCNet
-N_AGENTS = 4
+
+from social_dilemmas.envs.watershedLogging import on_episode_end, on_episode_step, on_episode_end
+
+
+NUM_AGENTS = 4
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--exp_name', type=str, default='comm_moa', help='Name experiment will be stored under')
 parser.add_argument('--env', type=str, default='cleanup', help='Name of the environment to rollout. Can be '
                                                                'cleanup or harvest.')
 parser.add_argument('--algorithm', type=str, default='PPO', help='Name of the rllib algorithm to use.')
-parser.add_argument('--num_agents', type=int, default=4, help='Number of agent policies')
+parser.add_argument('--num_agents', type=int, default=NUM_AGENTS, help='Number of agent policies')
 parser.add_argument('--train_batch_size', type=int, default=2600,
                     help='Size of the total dataset over which one epoch is computed.')
 parser.add_argument('--checkpoint_frequency', type=int, default=10,
@@ -115,7 +119,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
 
     # Each policy can have a different configuration (including custom model)
     def gen_policy(i):
-        if i<N_AGENTS:
+        if i<NUM_AGENTS:
             config = {
             "model": {"custom_model": "lstm_fc_net",
                     "custom_options": {"id": i, "share_comm_layer": share_comm_layer},
@@ -130,7 +134,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
 
     # Setup PPO with an ensemble of `num_policies` different policy graphs
     policy_graphs = {}
-    for i in range(2*N_AGENTS):
+    for i in range(2*NUM_AGENTS):
         policy_graphs['agent-' + str(i)] = gen_policy(i)
 
     def policy_mapping_fn(agent_id):
@@ -189,11 +193,16 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
                 "influence_reward_clip": 10,
                 "influence_divergence_measure": 'kl',
                 "influence_reward_weight": tune.grid_search([1.0]),
-                "influence_curriculum_steps": tune.grid_search([10e6]),
-                "influence_scaledown_start": tune.grid_search([100e6]),
-                "influence_scaledown_end": tune.grid_search([300e6]),
+                "influence_curriculum_steps": tune.grid_search([10e5]),
+                "influence_scaledown_start": tune.grid_search([100e5]),
+                "influence_scaledown_end": tune.grid_search([300e5]),
                 "influence_scaledown_final_val": tune.grid_search([.5]),
                 "influence_only_when_visible": tune.grid_search([True]),
+                "callbacks": {
+                    "on_episode_start": on_episode_start,
+                    "on_episode_step": on_episode_step,
+                    "on_episode_end": on_episode_end,
+                },
 
     })
     if args.algorithm == "PPO":

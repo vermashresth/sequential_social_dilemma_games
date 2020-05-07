@@ -18,12 +18,15 @@ from social_dilemmas.envs.watershedOrderedComm import WatershedEnv, WatershedSeq
 
 from models.watershed_moa_nets import MOA_LSTM
 
+from social_dilemmas.envs.watershedLogging import on_episode_end, on_episode_step, on_episode_end
+
+NUM_AGENTS = 4
 parser = argparse.ArgumentParser()
 parser.add_argument('--exp_name', type=str, default='moa', help='Name experiment will be stored under')
 parser.add_argument('--env', type=str, default='cleanup', help='Name of the environment to rollout. Can be '
                                                                'cleanup or harvest.')
 parser.add_argument('--algorithm', type=str, default='PPO', help='Name of the rllib algorithm to use.')
-parser.add_argument('--num_agents', type=int, default=4, help='Number of agent policies')
+parser.add_argument('--num_agents', type=int, default=NUM_AGENTS, help='Number of agent policies')
 parser.add_argument('--train_batch_size', type=int, default=2600,
                     help='Size of the total dataset over which one epoch is computed.')
 parser.add_argument('--checkpoint_frequency', type=int, default=10,
@@ -168,11 +171,16 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
                 "influence_reward_clip": 10,
                 "influence_divergence_measure": 'kl',
                 "influence_reward_weight": tune.grid_search([1.0]),
-                "influence_curriculum_steps": tune.grid_search([10e6]),
-                "influence_scaledown_start": tune.grid_search([100e6]),
-                "influence_scaledown_end": tune.grid_search([300e6]),
+                "influence_curriculum_steps": tune.grid_search([10e5]),
+                "influence_scaledown_start": tune.grid_search([100e5]),
+                "influence_scaledown_end": tune.grid_search([300e5]),
                 "influence_scaledown_final_val": tune.grid_search([.5]),
                 "influence_only_when_visible": tune.grid_search([True]),
+                "callbacks": {
+                    "on_episode_start": on_episode_start,
+                    "on_episode_step": on_episode_step,
+                    "on_episode_end": on_episode_end,
+                },
 
     })
     if args.algorithm == "PPO":

@@ -108,8 +108,9 @@ class WatershedEnv(MultiAgentEnv):
         self.action_hist = {}
 
         self.f_rew = [0, 0, 0, 0]
-        self.pen = 0
+        self.pen = []
 
+        self.n_viol = [0,0,0,0,0,0]
         self.set_new_season()
         #
         # if self.return_agent_actions:
@@ -246,13 +247,13 @@ class WatershedEnv(MultiAgentEnv):
                                                     "visible_agents": self.find_visible_agents(self.i2id(i))}
                     rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] =  rewnow, False, {"viol":0}
                 else:
-                    obs[self.i2id(i)], rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = np.array(special_st), rewnow, False, {"viol":0}
+                    obs[self.i2id(i)], rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = np.array(special_st), rewnow, False, {"viol":None}
 
             done["__all__"] = False
 
         else:
             # Final step on mini loop, all obs, rewards must be returned
-            _, self.f_rew, self.pen, n_viol = self.cal_rewards(self.action_hist)
+            _, self.f_rew, self.pen, self.n_viol = self.cal_rewards(self.action_hist)
 
             if not self.local_obs:
                 st = self.get_state()
@@ -272,9 +273,9 @@ class WatershedEnv(MultiAgentEnv):
                                              if key != self.i2id(i)]).astype(np.int64)
                     obs[self.i2id(i)] = {"curr_obs": np.array(special_st), "other_agent_actions": prev_actions,
                                                     "visible_agents": self.find_visible_agents(self.i2id(i))}
-                    rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] =  rewnow, True, {"viol":n_viol}
+                    rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] =  rewnow, True, {"viol":self.n_viol}
                 else:
-                    obs[self.i2id(i)], rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = np.array(special_st), rewnow, True, {"viol":n_viol}
+                    obs[self.i2id(i)], rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = np.array(special_st), rewnow, True, {"viol":self.n_viol}
             done["__all__"] = True
         self.current_phase+=1
         return obs, rew, done, info
@@ -306,7 +307,8 @@ class WatershedSeqEnv(WatershedEnv):
 
         self.f_rew = [0, 0, 0, 0]
         self.pen = 0
-        self.n_viol = 0
+        self.n_viol = [0,0,0,0,0,0]
+        self.rew_sum_keeper = [0,0,0,0]
         self.set_new_season()
 
 
@@ -348,7 +350,7 @@ class WatershedSeqEnv(WatershedEnv):
 
 
         if self.current_phase==self.total_phases:
-            x, self.f_rew, self.pen, n_viol = self.cal_rewards(self.action_hist)
+            x, self.f_rew, self.pen, self.n_viol = self.cal_rewards(self.action_hist)
             x1,x2,x3,x4,x5,x6 = x
             self.prev_actions = [np.array([self.action_hist[key] for key in sorted(self.action_hist.keys())
                                      if key != self.i2id(i)]).astype(np.int64) for i in range(self.num_agents)]
@@ -358,7 +360,7 @@ class WatershedSeqEnv(WatershedEnv):
             p = np.random.randint(1000)
             if p<3:
                 print("All rewards: ", self.f_rew)
-                print("Penelaty: ", self.pen, " Violations: ", n_viol, " Total Viol: ", sum(n_viol))
+                print("Penelaty: ", self.pen, " Violations: ", self.n_viol, " Total Viol: ", sum(self.n_viol))
                 print("Current sums: ",self.current_sums)
                 print("Big Reqs: ", self.mybigreq)
                 print("X: ", x)
@@ -369,6 +371,10 @@ class WatershedSeqEnv(WatershedEnv):
         if self.internal_step>=self.max_steps:
             self.end_episode = True
 
+        if self.end_episode and self.current_phase==self.total_phases-1:
+            done["__all__"] = True
+        else:
+            done["__all__"] = False
 
         if not self.local_obs:
             st = self.get_state()
@@ -393,18 +399,24 @@ class WatershedSeqEnv(WatershedEnv):
                 if self.end_episode:
                     rewnow+=sum(temp)
 
+            self.rew_sum_keeper[i]+=rewnow
+
             if self.return_agent_actions:
 
                 obs[self.i2id(i)] = {"curr_obs": np.array(special_st), "other_agent_actions": self.prev_actions[i],"visible_agents": self.find_visible_agents(self.i2id(i))}
                 rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = rewnow, self.end_episode, {"viol":self.n_viol, "temp":sum(temp), "acts":self.action_hist, 'end':self.end_episode}
             else:
-                obs[self.i2id(i)], rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = np.array(special_st), rewnow, self.end_episode, {"viol":self.n_viol, "temp":sum(temp), "acts":self.action_hist, 'end':self.end_episode}
+                obs[self.i2id(i)], rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = np.array(special_st), rewnow, self.end_episode, {"viol":self.n_viol, "temp":sum(temp), "acts":self.action_hist,'end':self.end_episode, 'true_end':done["__all__"], "running_rew":self.rew_sum_keeper}
 
-        if self.end_episode and self.current_phase==self.total_phases-1:
-            done["__all__"] = True
-        else:
-            done["__all__"] = False
 
+
+        if self.end_episode and done["__all__"]:
+          p=np.random.randint(1000)
+          if p<3:
+            print("total episode rewards", self.rew_sum_keeper)
+            print("total sum", self.current_sums)
+            print("sum based rew", temp)
+            print()
 
         self.current_phase+=1
         return obs, rew, done, info
@@ -474,7 +486,8 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
 
         self.f_rew = [0, 0, 0, 0]
         self.pen = 0
-        self.n_viol = 0
+        self.n_viol = [0,0,0,0,0,0]
+        self.rew_sum_keeper = [0,0,0,0]
         self.set_new_season()
 
 
@@ -521,7 +534,7 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
 
 
         if self.current_phase==self.total_phases:
-            x, self.f_rew, self.pen, n_viol = self.cal_rewards(self.watershed_action_hist)
+            x, self.f_rew, self.pen, self.n_viol = self.cal_rewards(self.watershed_action_hist)
 
 
 
@@ -533,16 +546,21 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
             p = np.random.randint(1000)
             if p<3:
                 print("All rewards: ", self.f_rew)
-                print("Penelaty: ", self.pen, " Violations: ", n_viol, " Total Viol: ", sum(n_viol))
+                print("Penelaty: ", self.pen, " Violations: ", self.n_viol, " Total Viol: ", sum(self.n_viol))
                 print("Current sums: ",self.current_sums)
                 print("Big Reqs: ", self.mybigreq)
             self.internal_step+=1
 
             self.current_phase%=self.total_phases
 
+
         if self.internal_step>=self.max_steps:
             self.end_episode = True
 
+        if self.end_episode and self.current_phase==self.total_phases-1:
+            done["__all__"] = True
+        else:
+            done["__all__"] = False
 
         if not self.local_obs:
             st = self.get_state()
@@ -567,6 +585,8 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
                 if self.end_episode:
                     rewnow+=sum(temp)
 
+            self.rew_sum_keeper[i]+=rewnow
+
             if i < self.comm_agents:
                 obs[self.i2id(i)] = np.array(st)
             else:
@@ -577,12 +597,16 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
 
                 else:
                     obs[self.i2id(i)] = np.array(special_st)
-            rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = rewnow, self.end_episode, {"viol":self.n_viol, "temp":sum(temp), "acts":self.action_hist, 'end':self.end_episode}
-        if self.end_episode and self.current_phase==self.total_phases-1:
-            done["__all__"] = True
-        else:
-            done["__all__"] = False
+            rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = rewnow, self.end_episode, {"viol":self.n_viol, "temp":sum(temp), "acts":self.action_hist, 'end':self.end_episode, 'true_end':done["__all__"], 'running_rew':self.rew_sum_keeper}
 
+
+        if self.end_episode and done["__all__"]:
+          p=np.random.randint(1000)
+          if p<3:
+            print("total episode rewards", self.rew_sum_keeper)
+            print("total sum", self.current_sums)
+            print("sum based rew", temp)
+            print()
 
         self.current_phase+=1
         return obs, rew, done, info
