@@ -18,7 +18,7 @@ from social_dilemmas.envs.watershedOrderedComm import WatershedEnv, WatershedSeq
 
 from models.watershed_moa_nets import MOA_LSTM
 
-from social_dilemmas.envs.watershedLogging import on_episode_end, on_episode_step, on_episode_end
+from social_dilemmas.envs.watershedLogging import on_episode_start, on_episode_step, on_episode_end
 
 NUM_AGENTS = 4
 parser = argparse.ArgumentParser()

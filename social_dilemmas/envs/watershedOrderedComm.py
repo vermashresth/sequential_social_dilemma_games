@@ -404,9 +404,9 @@ class WatershedSeqEnv(WatershedEnv):
             if self.return_agent_actions:
 
                 obs[self.i2id(i)] = {"curr_obs": np.array(special_st), "other_agent_actions": self.prev_actions[i],"visible_agents": self.find_visible_agents(self.i2id(i))}
-                rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = rewnow, self.end_episode, {"viol":self.n_viol, "temp":sum(temp), "acts":self.action_hist, 'end':self.end_episode}
             else:
-                obs[self.i2id(i)], rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = np.array(special_st), rewnow, self.end_episode, {"viol":self.n_viol, "temp":sum(temp), "acts":self.action_hist,'end':self.end_episode, 'true_end':done["__all__"], "running_rew":self.rew_sum_keeper}
+                obs[self.i2id(i)] = np.array(special_st)
+            rew[self.i2id(i)], done[self.i2id(i)], info[self.i2id(i)] = rewnow, self.end_episode, {"viol":self.n_viol, "temp":sum(temp), "acts":self.action_hist, 'end':self.end_episode,'true_end':done["__all__"], "running_rew":self.rew_sum_keeper}
 
 
 
@@ -584,8 +584,8 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
                 rewnow = sum(self.f_rew) - self.pen
                 if self.end_episode:
                     rewnow+=sum(temp)
-
-            self.rew_sum_keeper[i]+=rewnow
+            if i>=self.comm_agents:
+                self.rew_sum_keeper[i%self.comm_agents]+=rewnow
 
             if i < self.comm_agents:
                 obs[self.i2id(i)] = np.array(st)

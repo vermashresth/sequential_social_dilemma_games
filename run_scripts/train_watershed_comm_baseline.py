@@ -16,7 +16,7 @@ from social_dilemmas.envs.watershedOrderedComm import  WatershedSeqCommEnv
 # from models.lstm_fc_net import LSTMFCNet
 from models.watershed_nets import LSTMFCNet, FCNet
 
-from social_dilemmas.envs.watershedLogging import on_episode_end, on_episode_step, on_episode_end
+from social_dilemmas.envs.watershedLogging import on_episode_start, on_episode_step_comm, on_episode_end
 
 N_AGENTS = 4
 parser = argparse.ArgumentParser()
@@ -172,7 +172,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
                 },
                 "callbacks": {
                     "on_episode_start": on_episode_start,
-                    "on_episode_step": on_episode_step,
+                    "on_episode_step": on_episode_step_comm,
                     "on_episode_end": on_episode_end,
                 },
 

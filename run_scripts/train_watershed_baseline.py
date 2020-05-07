@@ -11,7 +11,7 @@ from social_dilemmas.envs.harvest import HarvestEnv
 from social_dilemmas.envs.cleanup import CleanupEnv
 from social_dilemmas.envs.watershedOrderedComm import WatershedEnv, WatershedSeqEnv
 
-from social_dilemmas.envs.watershedLogging import on_episode_end, on_episode_step, on_episode_end
+from social_dilemmas.envs.watershedLogging import on_episode_start, on_episode_step, on_episode_end
 
 # from models.conv_to_fc_net import ConvToFCNet
 # from models.conv_to_fcnet_v2 import ConvToFCNetv2
