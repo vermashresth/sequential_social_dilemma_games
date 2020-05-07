@@ -6,13 +6,15 @@ from ray.rllib.models.model import restore_original_dimensions
 from ray.rllib.models.modelv2 import ModelV2
 from ray.rllib.models.tf.recurrent_tf_modelv2 import RecurrentTFModelV2
 from ray.rllib.utils.annotations import override
-from ray.rllib.utils import try_import_tf
+from ray.rllib.utils import try_import_tf, try_import_tfp
 from ray.rllib.policy.sample_batch import SampleBatch
 
 tf = try_import_tf()
 
+tfp = try_import_tfp()
+tfd = tfp.distributions
 # keras rnn Input - 16 - 16 - LSTM(64) - Out
-
+NUM_AGENTS = 4
 # moa lstm input -16-16 kerasrnn
 class KerasRNN(RecurrentTFModelV2):
     """Maps the input direct to an LSTM cell"""
@@ -137,7 +139,7 @@ class MOA_LSTM(RecurrentTFModelV2):
                                        model_config, name)
         try:
             self.id = model_config["custom_options"]["id"]
-            if self.id>=4:
+            if self.id>=NUM_AGENTS:
                 self.causal=True
             else:
                 self.causal = False
@@ -232,7 +234,7 @@ class MOA_LSTM(RecurrentTFModelV2):
 
         # First we have to compute it over the trajectory to give us the hidden state that we will actually use
         other_actions = input_dict["obs"]["other_agent_actions"]
-        agent_action = tf.cast(tf.expand_dims(input_dict["prev_action"], axis=-1), tf.float32)
+        agent_action = input_dict["prev_action"]
         stacked_actions = tf.concat([agent_action, other_actions], axis=-1)
         pass_dict = {"curr_obs": trunk, "prev_total_actions": stacked_actions}
 
@@ -242,13 +244,34 @@ class MOA_LSTM(RecurrentTFModelV2):
 
         # Now we can use that cell state to do the counterfactual predictions
         counterfactual_preds = []
-        for i in range(self.num_outputs):
-            possible_actions = np.array([i])[np.newaxis, np.newaxis, :]
+        counterfactual_pred_o, _, _ = self.moa_model.forward_rnn(pass_dict, [h2, c2], seq_lens)
+
+        for i in range(10):
+            possible_actions = np.array([i*0.1])[np.newaxis, np.newaxis, :]
             stacked_actions = tf.concat([possible_actions, other_actions], axis=-1)
             pass_dict = {"curr_obs": trunk, "prev_total_actions": stacked_actions}
-            counterfactual_pred, _, _ = self.moa_model.forward_rnn(pass_dict, [h2, c2], seq_lens)
-            counterfactual_preds.append(tf.expand_dims(counterfactual_pred, axis=-2))
-        self._counterfactual_preds = tf.concat(counterfactual_preds, axis=-2)
+            # print(self.moa_model.forward_rnn(pass_dict, [h2, c2], seq_lens))
+            # counterfactual_pred, _, _ = self.moa_model.forward_rnn(pass_dict, [h2, c2], seq_lens)
+            mean, log_std = tf.split(counterfactual_pred_o, 2, axis=2)
+            # print("bth", mean, log_std)
+            mean = tf.squeeze(mean)
+            log_std = tf.squeeze(log_std)
+            std = tf.exp(log_std)
+            # print("mean", mean)
+            # print("std", std)
+            dist = tfd.Normal(loc=mean, scale=std)
+            my_c = []
+            for j in range(10):
+              ar = np.array([j]*1)*0.1
+              # print("now printing")
+              my_c.append(dist.prob(ar))
+            counterfactual_pred = tf.concat(my_c,axis=0)
+            # print("low of work", counterfactual_pred)
+            counterfactual_preds.append(counterfactual_pred)
+        # print("out")
+        self._counterfactual_preds = tf.concat(counterfactual_preds, axis=0)
+        self._counterfactual_preds = tf.reshape(self._counterfactual_preds, [1,1,10, (NUM_AGENTS-1)*10])
+        # print(self._counterfactual_preds)
 
         # TODO(@evinitsky) move this into ppo_causal by using restore_original_dimensions()
         self._other_agent_actions = input_dict["obs"]["other_agent_actions"]
@@ -274,7 +297,7 @@ class MOA_LSTM(RecurrentTFModelV2):
 
         # stack the agent actions together
         other_agent_actions = tf.cast(obs_dict["other_agent_actions"], tf.float32)
-        agent_actions = tf.cast(tf.expand_dims(train_batch[SampleBatch.PREV_ACTIONS], axis=1), tf.float32)
+        agent_actions = train_batch[SampleBatch.PREV_ACTIONS]
         prev_total_actions = tf.concat([agent_actions, other_agent_actions], axis=-1)
 
         # Now we add the appropriate time dimension
@@ -300,7 +323,10 @@ class MOA_LSTM(RecurrentTFModelV2):
             i += 1
 
         moa_preds, _, _ = self.moa_model.forward_rnn(input_dict, states, train_batch.get("seq_lens"))
+
+
         return moa_preds
+
 
     def action_logits(self):
         return self._model_out

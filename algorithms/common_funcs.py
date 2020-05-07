@@ -16,6 +16,9 @@ from ray.rllib.utils import try_import_tf
 
 from ray.rllib.utils.tf_ops import make_tf_callable
 
+from scipy.stats import norm
+
+
 CAUSAL_CONFIG = {"num_other_agents": 1,
                  "moa_weight": 10.0,
                  "train_moa_only_when_visible": True,
@@ -135,11 +138,26 @@ def compute_influence_reward(policy, trajectory):
     # extract out the probability under the actions we actually did take
     true_probs = trajectory[COUNTERFACTUAL_ACTIONS]
     traj_index = list(range(len(trajectory['obs'])))
-    true_probs = true_probs[traj_index, :, trajectory['actions'], :]
+    # print("traj actions", trajectory['actions'])
+    my_act = []
+    for i in trajectory['actions']:
+      val = int(i[0]*10)
+      if val<0:
+        # print(val)
+        val = 0
+
+      if val>9:
+        # print(val)
+        val = 9
+
+      my_act.append(val)
+    discrete = np.array(my_act)
+    # discrete = np.apply_along_axis(lambda x:int(x*10), 0, trajectory['actions'])
+    true_probs = true_probs[traj_index, :, discrete, :]
     true_probs = np.reshape(true_probs, [true_probs.shape[0], policy.num_other_agents, -1])
     true_probs = scipy.special.softmax(true_probs, axis=-1)
     true_probs = true_probs / true_probs.sum(axis=-1, keepdims=1)  # reduce numerical inaccuracies
-
+    # print("after true probs", true_probs)
     # Get marginal predictions where effect of self is marginalized out
     marginal_probs = marginalize_predictions_over_own_actions(policy, trajectory)  # [B, Num agents, Num actions]
 
@@ -198,24 +216,46 @@ def get_agent_visibility_multiplier(trajectory, num_other_agents, agent_ids):
 
 def marginalize_predictions_over_own_actions(policy, trajectory):
     # Probability of each action in original trajectory
-    action_probs = scipy.special.softmax(trajectory[ACTION_LOGITS], axis=-1)
-
+    # print("action logits", trajectory[ACTION_LOGITS])
+    mean, log_std = trajectory[ACTION_LOGITS][..., 0], trajectory[ACTION_LOGITS][..., 1]
+    # print("bth marginal", mean, log_std)
+    mean = mean.flatten() # as many means as
+    log_std = log_std.flatten()
+    std = np.exp(log_std)
+    n = mean.shape
+    # print(n)
+    # print(mean)
+    #
+    # dist = tfd.Normal(loc=mean, scale=std)
+    my_logits = []
+    for j in range(10):
+      # ar = np.array([j]*n)*0.1
+      # print("now printing")
+      my_logits.append(norm.pdf(j*0.1, mean, std))
+    # print(my_logits)
+    action_logits = np.concatenate(my_logits, axis=0).reshape(len(mean),1, 10)
+    # print(action_logits.shape)
+    # print("low of work", action_logits)
+    action_probs = scipy.special.softmax(action_logits, axis=-1)
+    # print("action probs", action_probs)
     # Normalize to reduce numerical inaccuracies
     action_probs = action_probs / action_probs.sum(axis=1, keepdims=1)
-
+    # print("action probs", action_probs)
     # Indexing of this is [B, Num agents, Agent actions, other agent logits] before we marginalize
     counter_probs = trajectory[COUNTERFACTUAL_ACTIONS]
+    # print("cunetr logits before", counter_probs)
     counter_probs = np.reshape(counter_probs, [counter_probs.shape[0], policy.num_other_agents, -1, action_probs.shape[-1]])
     counter_probs = scipy.special.softmax(counter_probs, axis=-1)
+    # print("cunetr logits after", counter_probs)
     marginal_probs = np.sum(counter_probs, axis=-2)
-
+    # print("marginal before", marginal_probs)
     # Multiply by probability of each action to renormalize probability
     tiled_probs = np.tile(action_probs, [1, policy.num_other_agents, 1])
     marginal_probs = np.multiply(marginal_probs, tiled_probs)
 
     # Normalize to reduce numerical inaccuracies
     marginal_probs = marginal_probs / marginal_probs.sum(axis=2, keepdims=1)
-
+    # print("marginal after", marginal_probs)
     return marginal_probs
 
 

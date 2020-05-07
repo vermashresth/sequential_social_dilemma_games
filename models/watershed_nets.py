@@ -10,7 +10,7 @@ from ray.rllib.utils.annotations import override
 from ray.rllib.utils import try_import_tf
 tf = try_import_tf()
 
-N_AGENTS = 4
+NUM_AGENTS = 4
 shared_layers = []
 ##FC
 # Input -16 -16 out
@@ -20,7 +20,7 @@ shared_layers = []
 #Input -16 -16 LSTM(64) - out
 #Value Input -16 -16 LSTM(64) - out
 
-for i in range(N_AGENTS):
+for i in range(NUM_AGENTS):
     shared_layers.append(tf.keras.layers.Dense(
         16,
         name="my_layer1"+str(i),
@@ -39,7 +39,7 @@ class FCNet(TFModelV2):
             id = model_config["custom_options"]["id"]
 
             self.id = model_config["custom_options"]["id"]
-            if self.id>=4:
+            if self.id>=NUM_AGENTS:
                 self.causal=True
             else:
                 self.causal = False
@@ -108,8 +108,15 @@ class LSTMFCNet(RecurrentTFModelV2):
         try:
             share_comm_layer = model_config["custom_options"]["share_comm_layer"]
             id = model_config["custom_options"]["id"]
-        except:
+            self.id = model_config["custom_options"]["id"]
+            if self.id>=NUM_AGENTS:
+                self.causal=True
+            else:
+                self.causal = False
+        except Exception as e:
+            print(e)
             share_comm_layer = False
+            self.causal = False
         # Define input layers
         input_layer = tf.keras.layers.Input(
             shape=(None, obs_space.shape[0]), name="inputs")

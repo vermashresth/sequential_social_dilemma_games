@@ -23,6 +23,9 @@ from ray.rllib.agents.trainer_template import build_trainer
 from algorithms.common_funcs import setup_moa_loss, causal_fetches, setup_causal_mixins, get_causal_mixins, \
     causal_postprocess_trajectory, CAUSAL_CONFIG
 
+
+NUM_AGENTS = 4
+
 tf = try_import_tf()
 
 POLICY_SCOPE = "func"
