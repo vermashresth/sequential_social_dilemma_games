@@ -1,11 +1,13 @@
 [![Build Status](https://travis-ci.com/eugenevinitsky/sequential_social_dilemma_games.svg?branch=master)](https://travis-ci.com/eugenevinitsky/sequential_social_dilemma_games)
 
 # Sequential Social Dilemma Games
-This repo is an open-source implementation of DeepMind's Sequential Social Dilemma (SSD) multi-agent game-theoretic environments [[1]](https://arxiv.org/abs/1702.03037). SSDs can be thought of as analogous to spatially and temporally extended Prisoner's Dilemma-like games. The reward structure poses a dilemma because individual short-term optimal strategies lead to poor long-term outcomes for the group.
+This repo is based on open-source implementation of DeepMind's Sequential Social Dilemma (SSD) multi-agent game-theoretic environments [[1]](https://arxiv.org/abs/1702.03037). SSDs can be thought of as analogous to spatially and temporally extended Prisoner's Dilemma-like games. The reward structure poses a dilemma because individual short-term optimal strategies lead to poor long-term outcomes for the group.
 
-The implemented environments are structured to be compatible with OpenAIs gym environments (https://github.com/openai/gym) as well as RLlib's Multiagent Environment (https://github.com/ray-project/ray/blob/master/python/ray/rllib/env/multi_agent_env.py)
+The implemented environments are structured to be compatible with OpenAIs gym environments (https://github.com/openai/gym) as well as RLlib's Multiagent Environment (https://github.com/ray-project/ray/blob/master/python/ray/rllib/env/multi_agent_env.py).
+Additionally, this codebase implements a commmunication + causal architecture.
 
 ## Implemented Games
+* **Watershed**: Watershed Management is a problem of resource allocation consisting of several self-interested agents. These agents can withdraw water from a finite but commonsupply of water for individual purposes. The problem involves several constraints,multiple objectives, and optimisation involves continuous variables. Watershed management here is modelled as a multi-agent system.
 
 * **Cleanup**: A public goods dilemma in which agents get a reward for consuming apples, but must use a cleaning beam to clean a river in order for apples to grow. While an agent is cleaning the river, other agents can exploit it by consuming the apples that appear.
 
@@ -15,9 +17,6 @@ The implemented environments are structured to be compatible with OpenAIs gym en
 
 <img src="images/harvest.png" alt="Image of the Harvest game" width="483" height="187"/>
 
-<img src="images/schelling.png" alt="Schelling diagrams for Harvest and Cleanup" width="953" height="352"/>
-
-The above plot shows the empirical Schelling diagrams for both Cleanup (A) and Harvest (B) (from [[2]](https://arxiv.org/abs/1803.08884)). These diagrams show the payoff that an individual agent can expect if it follows a defecting/exploitative strategy (red) vs a cooperative strategy (blue), given the number of other agents that are cooperating.  We can see that an individual agent can almost always greedily benefit from detecting, but the more agents that defect, the worse the outcomes for all agents. 
 
 ## Relevant papers
 
@@ -63,5 +62,5 @@ Every environment that subclasses MapEnv probably needs to implement the followi
 ```
         
 # Contributors
-
-This code base was developed by Eugene Vinitsky and Natasha Jaques; help with reproduction was provided by Joel Leibo, Antonio Castenada, and Edward Hughes. 
+The watershed games and accompanied code is developed by Shresth Verma.
+This original code base for SSDs was developed by Eugene Vinitsky and Natasha Jaques.
