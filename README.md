@@ -9,6 +9,8 @@ Additionally, this codebase implements a commmunication + causal architecture.
 ## Implemented Games
 * **Watershed**: Watershed Management is a problem of resource allocation consisting of several self-interested agents. These agents can withdraw water from a finite but commonsupply of water for individual purposes. The problem involves several constraints,multiple objectives, and optimisation involves continuous variables. Watershed management here is modelled as a multi-agent system.
 
+<img src="images/watershed.png" alt="Image of the watershed game" width="270" height="246"/>
+
 * **Cleanup**: A public goods dilemma in which agents get a reward for consuming apples, but must use a cleaning beam to clean a river in order for apples to grow. While an agent is cleaning the river, other agents can exploit it by consuming the apples that appear.
 
 <img src="images/cleanup.png" alt="Image of the cleanup game" width="170" height="246"/>
@@ -16,6 +18,9 @@ Additionally, this codebase implements a commmunication + causal architecture.
 * **Harvest**: A tragedy-of-the-commons dilemma in which apples regrow at a rate that depends on the amount of nearby apples. If individual agents employ an exploitative strategy by greedily consuming too many apples, the collective reward of all agents is reduced.
 
 <img src="images/harvest.png" alt="Image of the Harvest game" width="483" height="187"/>
+
+## Communication in Sequential Social Dilemmmas
+<img src="images/commwatershed.png" alt="Schematic diagram for communication in SSDs" width="470" height="246"/>
 
 
 ## Relevant papers
