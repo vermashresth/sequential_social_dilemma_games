@@ -66,8 +66,8 @@ watershed_default_params = {
 }
 
 watershed_seq_comm_default_params = {
-    'lr_init': 0.001,
-    'lr_final': 0.0001,
+    'lr_init': 0.0001,
+    'lr_final': 0.00001,
     'entropy_coeff': 0.001
 }
 
@@ -236,7 +236,8 @@ if __name__=='__main__':
             },
             'checkpoint_freq': args.checkpoint_frequency,
             "config": config,
-            "local_dir": "/content/gdrive/My Drive/watershed_exps"
+            # "local_dir": "/content/gdrive/My Drive/watershed_exps"
+            "local_dir": "logs/"
         }
 
 

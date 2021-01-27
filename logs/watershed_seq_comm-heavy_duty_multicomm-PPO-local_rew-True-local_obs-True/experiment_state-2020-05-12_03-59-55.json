@@ -1,0 +1,416 @@
+{
+  "checkpoints": [
+    {
+      "trainable_name": "PPO",
+      "trial_id": "f0855326",
+      "config": {
+        "monitor": false,
+        "log_level": "INFO",
+        "callbacks": {
+          "on_episode_start": {
+            "_type": "CLOUDPICKLE_FALLBACK",
+            "value": "8004953e000000000000008c25736f6369616c5f64696c656d6d61732e656e76732e7761746572736865644c6f6767696e67948c106f6e5f657069736f64655f73746172749493942e"
+          },
+          "on_episode_step": {
+            "_type": "CLOUDPICKLE_FALLBACK",
+            "value": "80049542000000000000008c25736f6369616c5f64696c656d6d61732e656e76732e7761746572736865644c6f6767696e67948c146f6e5f657069736f64655f737465705f636f6d6d9493942e"
+          },
+          "on_episode_end": {
+            "_type": "CLOUDPICKLE_FALLBACK",
+            "value": "8004953c000000000000008c25736f6369616c5f64696c656d6d61732e656e76732e7761746572736865644c6f6767696e67948c0e6f6e5f657069736f64655f656e649493942e"
+          }
+        },
+        "ignore_worker_failures": false,
+        "log_sys_usage": true,
+        "eager": false,
+        "eager_tracing": false,
+        "no_eager_on_workers": false,
+        "model": {
+          "conv_filters": null,
+          "conv_activation": "relu",
+          "fcnet_activation": "tanh",
+          "fcnet_hiddens": [
+            256,
+            256
+          ],
+          "free_log_std": false,
+          "no_final_linear": false,
+          "vf_share_layers": true,
+          "use_lstm": false,
+          "max_seq_len": 20,
+          "lstm_cell_size": 256,
+          "lstm_use_prev_action_reward": false,
+          "state_shape": null,
+          "framestack": true,
+          "dim": 84,
+          "grayscale": false,
+          "zero_mean": true,
+          "custom_preprocessor": null,
+          "custom_model": null,
+          "custom_action_dist": null,
+          "custom_options": {}
+        },
+        "optimizer": {},
+        "gamma": 0.99,
+        "horizon": 1000,
+        "soft_horizon": false,
+        "no_done_at_end": false,
+        "env_config": {
+          "func_create": {
+            "_type": "CLOUDPICKLE_FALLBACK",
+            "value": "80049583020000000000008c1b7261792e636c6f75647069636b6c652e636c6f75647069636b6c65948c0e5f66696c6c5f66756e6374696f6e9493942868008c0f5f6d616b655f736b656c5f66756e6394939468008c0d5f6275696c74696e5f747970659493948c08436f6465547970659485945294284b014b004b014b054b13430e740088028801880064018d035300944e8c1472657475726e5f6167656e745f616374696f6e73948c096c6f63616c5f726577948c096c6f63616c5f6f627394879486948c13576174657273686564536571436f6d6d456e769485948c015f9485948c2c72756e5f736372697074732f747261696e5f7761746572736865645f636f6d6d5f626173656c696e652e7079948c0b656e765f63726561746f72944b514302000194680d680c680b879429749452944b037d94288c0b5f5f7061636b6167655f5f944e8c085f5f6e616d655f5f948c085f5f6d61696e5f5f948c085f5f66696c655f5f948c2c72756e5f736372697074732f747261696e5f7761746572736865645f636f6d6d5f626173656c696e652e70799475879452947d94288c07676c6f62616c73947d9468108c29736f6369616c5f64696c656d6d61732e656e76732e7761746572736865644f726465726564436f6d6d9468109394738c0864656661756c7473944e8c0464696374947d948c0e636c6f737572655f76616c756573945d9428888889658c066d6f64756c6594681d8c046e616d659468158c03646f63944e8c175f636c6f75647069636b6c655f7375626d6f64756c6573945d948c0b616e6e6f746174696f6e73947d948c087175616c6e616d65948c1a73657475702e3c6c6f63616c733e2e656e765f63726561746f72948c0a6b7764656661756c7473944e7574522e"
+          },
+          "env_name": "watershed_seq_comm_env",
+          "run": "PPO"
+        },
+        "env": "watershed_seq_comm_env",
+        "clip_rewards": null,
+        "clip_actions": true,
+        "preprocessor_pref": "deepmind",
+        "lr": 5e-05,
+        "evaluation_interval": null,
+        "evaluation_num_episodes": 10,
+        "evaluation_config": {},
+        "num_workers": 1,
+        "num_gpus": 0,
+        "num_cpus_per_worker": 1.0,
+        "num_gpus_per_worker": 0,
+        "custom_resources_per_worker": {},
+        "num_cpus_for_driver": 1,
+        "memory": 0,
+        "object_store_memory": 0,
+        "memory_per_worker": 0,
+        "object_store_memory_per_worker": 0,
+        "num_envs_per_worker": 1,
+        "sample_batch_size": 200,
+        "train_batch_size": 2600,
+        "batch_mode": "truncate_episodes",
+        "sample_async": false,
+        "observation_filter": "NoFilter",
+        "synchronize_filters": true,
+        "tf_session_args": {
+          "intra_op_parallelism_threads": 2,
+          "inter_op_parallelism_threads": 2,
+          "gpu_options": {
+            "allow_growth": true
+          },
+          "log_device_placement": false,
+          "device_count": {
+            "CPU": 1
+          },
+          "allow_soft_placement": true
+        },
+        "local_tf_session_args": {
+          "intra_op_parallelism_threads": 8,
+          "inter_op_parallelism_threads": 8
+        },
+        "compress_observations": false,
+        "collect_metrics_timeout": 180,
+        "metrics_smoothing_episodes": 100,
+        "remote_worker_envs": false,
+        "remote_env_batch_wait_ms": 0,
+        "min_iter_time_s": 0,
+        "timesteps_per_iteration": 0,
+        "seed": null,
+        "input": "sampler",
+        "input_evaluation": [
+          "is",
+          "wis"
+        ],
+        "postprocess_inputs": false,
+        "shuffle_buffer_size": 0,
+        "output": null,
+        "output_compress_columns": [
+          "obs",
+          "new_obs"
+        ],
+        "output_max_file_size": 67108864,
+        "multiagent": {
+          "policies": {
+            "agent-0": [
+              null,
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "80049557010000000000008c0e67796d2e7370616365732e626f78948c03426f789493942981947d94288c036c6f77948c1c6e756d70792e636f72652e5f6d756c746961727261795f756d617468948c0c5f7265636f6e7374727563749493948c056e756d7079948c076e6461727261799493944b0085944301629487945294284b014b08859468098c0564747970659493948c026634944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946289432000007ac300007ac300007ac300007ac300007ac300007ac300007ac300007ac3947494628c0468696768946808680b4b008594680d87945294284b014b088594681589432000007a4300007a4300007a4300007a4300007a4300007a4300007a4300007a43947494628c057368617065944b0885948c0564747970659468128c026634944b004b0187945294284b0368164e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "8004957b000000000000008c1367796d2e7370616365732e6469736372657465948c0844697363726574659493942981947d94288c016e944b058c05736861706594298c056474797065948c056e756d7079948c0564747970659493948c026938944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "model": {
+                  "custom_model": "lstm_fc_net",
+                  "use_lstm": false,
+                  "custom_options": {
+                    "id": 0,
+                    "share_comm_layer": false,
+                    "return_agent_actions": false
+                  }
+                }
+              }
+            ],
+            "agent-1": [
+              null,
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "80049557010000000000008c0e67796d2e7370616365732e626f78948c03426f789493942981947d94288c036c6f77948c1c6e756d70792e636f72652e5f6d756c746961727261795f756d617468948c0c5f7265636f6e7374727563749493948c056e756d7079948c076e6461727261799493944b0085944301629487945294284b014b08859468098c0564747970659493948c026634944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946289432000007ac300007ac300007ac300007ac300007ac300007ac300007ac300007ac3947494628c0468696768946808680b4b008594680d87945294284b014b088594681589432000007a4300007a4300007a4300007a4300007a4300007a4300007a4300007a43947494628c057368617065944b0885948c0564747970659468128c026634944b004b0187945294284b0368164e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "8004957b000000000000008c1367796d2e7370616365732e6469736372657465948c0844697363726574659493942981947d94288c016e944b058c05736861706594298c056474797065948c056e756d7079948c0564747970659493948c026938944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "model": {
+                  "custom_model": "lstm_fc_net",
+                  "use_lstm": false,
+                  "custom_options": {
+                    "id": 1,
+                    "share_comm_layer": false,
+                    "return_agent_actions": false
+                  }
+                }
+              }
+            ],
+            "agent-2": [
+              null,
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "80049557010000000000008c0e67796d2e7370616365732e626f78948c03426f789493942981947d94288c036c6f77948c1c6e756d70792e636f72652e5f6d756c746961727261795f756d617468948c0c5f7265636f6e7374727563749493948c056e756d7079948c076e6461727261799493944b0085944301629487945294284b014b08859468098c0564747970659493948c026634944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946289432000007ac300007ac300007ac300007ac300007ac300007ac300007ac300007ac3947494628c0468696768946808680b4b008594680d87945294284b014b088594681589432000007a4300007a4300007a4300007a4300007a4300007a4300007a4300007a43947494628c057368617065944b0885948c0564747970659468128c026634944b004b0187945294284b0368164e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "8004957b000000000000008c1367796d2e7370616365732e6469736372657465948c0844697363726574659493942981947d94288c016e944b058c05736861706594298c056474797065948c056e756d7079948c0564747970659493948c026938944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "model": {
+                  "custom_model": "lstm_fc_net",
+                  "use_lstm": false,
+                  "custom_options": {
+                    "id": 2,
+                    "share_comm_layer": false,
+                    "return_agent_actions": false
+                  }
+                }
+              }
+            ],
+            "agent-3": [
+              null,
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "80049557010000000000008c0e67796d2e7370616365732e626f78948c03426f789493942981947d94288c036c6f77948c1c6e756d70792e636f72652e5f6d756c746961727261795f756d617468948c0c5f7265636f6e7374727563749493948c056e756d7079948c076e6461727261799493944b0085944301629487945294284b014b08859468098c0564747970659493948c026634944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946289432000007ac300007ac300007ac300007ac300007ac300007ac300007ac300007ac3947494628c0468696768946808680b4b008594680d87945294284b014b088594681589432000007a4300007a4300007a4300007a4300007a4300007a4300007a4300007a43947494628c057368617065944b0885948c0564747970659468128c026634944b004b0187945294284b0368164e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "8004957b000000000000008c1367796d2e7370616365732e6469736372657465948c0844697363726574659493942981947d94288c016e944b058c05736861706594298c056474797065948c056e756d7079948c0564747970659493948c026938944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "model": {
+                  "custom_model": "lstm_fc_net",
+                  "use_lstm": false,
+                  "custom_options": {
+                    "id": 3,
+                    "share_comm_layer": false,
+                    "return_agent_actions": false
+                  }
+                }
+              }
+            ],
+            "agent-4": [
+              null,
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "8004955f010000000000008c0e67796d2e7370616365732e626f78948c03426f789493942981947d94288c036c6f77948c1c6e756d70792e636f72652e5f6d756c746961727261795f756d617468948c0c5f7265636f6e7374727563749493948c056e756d7079948c076e6461727261799493944b0085944301629487945294284b014b09859468098c0564747970659493948c026634944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946289432400007ac300007ac300007ac300007ac300007ac300007ac300007ac300007ac300007ac3947494628c0468696768946808680b4b008594680d87945294284b014b098594681589432400007a4300007a4300007a4300007a4300007a4300007a4300007a4300007a4300007a43947494628c057368617065944b0985948c0564747970659468128c026634944b004b0187945294284b0368164e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "8004951f010000000000008c0e67796d2e7370616365732e626f78948c03426f789493942981947d94288c036c6f77948c1c6e756d70792e636f72652e5f6d756c746961727261795f756d617468948c0c5f7265636f6e7374727563749493948c056e756d7079948c076e6461727261799493944b0085944301629487945294284b014b01859468098c0564747970659493948c026634944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946289430400000000947494628c0468696768946808680b4b008594680d87945294284b014b01859468158943040000803f947494628c057368617065944b0185948c0564747970659468128c026634944b004b0187945294284b0368164e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "model": {
+                  "custom_model": "lstm_fc_net",
+                  "use_lstm": false,
+                  "custom_options": {
+                    "id": 0,
+                    "share_comm_layer": false,
+                    "return_agent_actions": false
+                  }
+                }
+              }
+            ],
+            "agent-5": [
+              null,
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "8004955f010000000000008c0e67796d2e7370616365732e626f78948c03426f789493942981947d94288c036c6f77948c1c6e756d70792e636f72652e5f6d756c746961727261795f756d617468948c0c5f7265636f6e7374727563749493948c056e756d7079948c076e6461727261799493944b0085944301629487945294284b014b09859468098c0564747970659493948c026634944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946289432400007ac300007ac300007ac300007ac300007ac300007ac300007ac300007ac300007ac3947494628c0468696768946808680b4b008594680d87945294284b014b098594681589432400007a4300007a4300007a4300007a4300007a4300007a4300007a4300007a4300007a43947494628c057368617065944b0985948c0564747970659468128c026634944b004b0187945294284b0368164e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "8004951f010000000000008c0e67796d2e7370616365732e626f78948c03426f789493942981947d94288c036c6f77948c1c6e756d70792e636f72652e5f6d756c746961727261795f756d617468948c0c5f7265636f6e7374727563749493948c056e756d7079948c076e6461727261799493944b0085944301629487945294284b014b01859468098c0564747970659493948c026634944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946289430400000000947494628c0468696768946808680b4b008594680d87945294284b014b01859468158943040000803f947494628c057368617065944b0185948c0564747970659468128c026634944b004b0187945294284b0368164e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "model": {
+                  "custom_model": "lstm_fc_net",
+                  "use_lstm": false,
+                  "custom_options": {
+                    "id": 1,
+                    "share_comm_layer": false,
+                    "return_agent_actions": false
+                  }
+                }
+              }
+            ],
+            "agent-6": [
+              null,
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "8004955f010000000000008c0e67796d2e7370616365732e626f78948c03426f789493942981947d94288c036c6f77948c1c6e756d70792e636f72652e5f6d756c746961727261795f756d617468948c0c5f7265636f6e7374727563749493948c056e756d7079948c076e6461727261799493944b0085944301629487945294284b014b09859468098c0564747970659493948c026634944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946289432400007ac300007ac300007ac300007ac300007ac300007ac300007ac300007ac300007ac3947494628c0468696768946808680b4b008594680d87945294284b014b098594681589432400007a4300007a4300007a4300007a4300007a4300007a4300007a4300007a4300007a43947494628c057368617065944b0985948c0564747970659468128c026634944b004b0187945294284b0368164e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "8004951f010000000000008c0e67796d2e7370616365732e626f78948c03426f789493942981947d94288c036c6f77948c1c6e756d70792e636f72652e5f6d756c746961727261795f756d617468948c0c5f7265636f6e7374727563749493948c056e756d7079948c076e6461727261799493944b0085944301629487945294284b014b01859468098c0564747970659493948c026634944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946289430400000000947494628c0468696768946808680b4b008594680d87945294284b014b01859468158943040000803f947494628c057368617065944b0185948c0564747970659468128c026634944b004b0187945294284b0368164e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "model": {
+                  "custom_model": "lstm_fc_net",
+                  "use_lstm": false,
+                  "custom_options": {
+                    "id": 2,
+                    "share_comm_layer": false,
+                    "return_agent_actions": false
+                  }
+                }
+              }
+            ],
+            "agent-7": [
+              null,
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "8004955f010000000000008c0e67796d2e7370616365732e626f78948c03426f789493942981947d94288c036c6f77948c1c6e756d70792e636f72652e5f6d756c746961727261795f756d617468948c0c5f7265636f6e7374727563749493948c056e756d7079948c076e6461727261799493944b0085944301629487945294284b014b09859468098c0564747970659493948c026634944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946289432400007ac300007ac300007ac300007ac300007ac300007ac300007ac300007ac300007ac3947494628c0468696768946808680b4b008594680d87945294284b014b098594681589432400007a4300007a4300007a4300007a4300007a4300007a4300007a4300007a4300007a43947494628c057368617065944b0985948c0564747970659468128c026634944b004b0187945294284b0368164e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "_type": "CLOUDPICKLE_FALLBACK",
+                "value": "8004951f010000000000008c0e67796d2e7370616365732e626f78948c03426f789493942981947d94288c036c6f77948c1c6e756d70792e636f72652e5f6d756c746961727261795f756d617468948c0c5f7265636f6e7374727563749493948c056e756d7079948c076e6461727261799493944b0085944301629487945294284b014b01859468098c0564747970659493948c026634944b004b0187945294284b038c013c944e4e4e4affffffff4affffffff4b0074946289430400000000947494628c0468696768946808680b4b008594680d87945294284b014b01859468158943040000803f947494628c057368617065944b0185948c0564747970659468128c026634944b004b0187945294284b0368164e4e4e4affffffff4affffffff4b0074946275622e"
+              },
+              {
+                "model": {
+                  "custom_model": "lstm_fc_net",
+                  "use_lstm": false,
+                  "custom_options": {
+                    "id": 3,
+                    "share_comm_layer": false,
+                    "return_agent_actions": false
+                  }
+                }
+              }
+            ]
+          },
+          "policy_mapping_fn": {
+            "_type": "CLOUDPICKLE_FALLBACK",
+            "value": "80049507020000000000008c1b7261792e636c6f75647069636b6c652e636c6f75647069636b6c65948c0e5f66696c6c5f66756e6374696f6e9493942868008c0f5f6d616b655f736b656c5f66756e6394939468008c0d5f6275696c74696e5f747970659493948c08436f6465547970659485945294284b014b004b014b014b5343047c005300944e8594298c086167656e745f69649485948c2c72756e5f736372697074732f747261696e5f7761746572736865645f636f6d6d5f626173656c696e652e7079948c11706f6c6963795f6d617070696e675f666e944b7443020001942929749452944affffffff7d94288c0b5f5f7061636b6167655f5f944e8c085f5f6e616d655f5f948c085f5f6d61696e5f5f948c085f5f66696c655f5f948c2c72756e5f736372697074732f747261696e5f7761746572736865645f636f6d6d5f626173656c696e652e70799475879452947d94288c07676c6f62616c73947d948c0864656661756c7473944e8c0464696374947d948c0e636c6f737572655f76616c756573944e8c066d6f64756c659468168c046e616d6594680f8c03646f63944e8c175f636c6f75647069636b6c655f7375626d6f64756c6573945d948c0b616e6e6f746174696f6e73947d948c087175616c6e616d65948c2073657475702e3c6c6f63616c733e2e706f6c6963795f6d617070696e675f666e948c0a6b7764656661756c7473944e7574522e"
+          }
+        },
+        "use_gae": true,
+        "lambda": 1.0,
+        "kl_coeff": 0.2,
+        "sgd_minibatch_size": 128,
+        "shuffle_sequences": true,
+        "num_sgd_iter": 10,
+        "lr_schedule": [
+          [
+            0,
+            0.0001
+          ],
+          [
+            20000000,
+            1e-05
+          ]
+        ],
+        "vf_share_layers": false,
+        "vf_loss_coeff": 0.0001,
+        "entropy_coeff": 0.001,
+        "entropy_coeff_schedule": null,
+        "clip_param": 0.3,
+        "vf_clip_param": 10.0,
+        "grad_clip": null,
+        "kl_target": 0.01,
+        "simple_optimizer": false
+      },
+      "local_dir": "/media/petrichor/data/future/climateRL/clean/sequential_social_dilemma_games/logs/watershed_seq_comm-heavy_duty_multicomm-PPO-local_rew-True-local_obs-True",
+      "evaluated_params": {},
+      "experiment_tag": "0",
+      "resources": {
+        "cpu": 1,
+        "gpu": 0,
+        "memory": 0,
+        "object_store_memory": 0,
+        "extra_cpu": 1.0,
+        "extra_gpu": 0,
+        "extra_memory": 0,
+        "extra_object_store_memory": 0,
+        "custom_resources": {},
+        "extra_custom_resources": {}
+      },
+      "stopping_criterion": {
+        "training_iteration": 300
+      },
+      "loggers": "80049502000000000000004e2e",
+      "sync_to_driver_fn": "80049502000000000000004e2e",
+      "verbose": true,
+      "max_failures": 3,
+      "last_result": {},
+      "last_update_time": -Infinity,
+      "checkpoint_freq": 10,
+      "checkpoint_at_end": false,
+      "history": [],
+      "keep_checkpoints_num": null,
+      "_cmp_greater": true,
+      "best_checkpoint_attr_value": -Infinity,
+      "checkpoint_score_attr": "training_iteration",
+      "_checkpoint": "80049553000000000000008c0e7261792e74756e652e747269616c948c0a436865636b706f696e749493942981947d94288c0773746f72616765948c046469736b948c0576616c7565944e8c0b6c6173745f726573756c74947d9475622e",
+      "export_formats": [],
+      "status": "RUNNING",
+      "logdir": "/media/petrichor/data/future/climateRL/clean/sequential_social_dilemma_games/logs/watershed_seq_comm-heavy_duty_multicomm-PPO-local_rew-True-local_obs-True/PPO_watershed_seq_comm_env_0_2020-05-12_03-59-55j1pmzbl5",
+      "runner": null,
+      "result_logger": null,
+      "last_debug": 0,
+      "error_file": null,
+      "error_msg": null,
+      "num_failures": 0,
+      "custom_trial_name": null,
+      "results": "80049502000000000000004e2e",
+      "best_result": "80049502000000000000004e2e",
+      "param_config": "80049502000000000000004e2e",
+      "extra_arg": "80049502000000000000004e2e",
+      "_nonjson_fields": [
+        "_checkpoint",
+        "loggers",
+        "sync_to_driver_fn",
+        "results",
+        "best_result",
+        "param_config",
+        "extra_arg"
+      ],
+      "__logger_started__": true
+    }
+  ],
+  "runner_data": {
+    "_global_time_limit": Infinity,
+    "_total_time": 0,
+    "_iteration": 0,
+    "_verbose": true,
+    "_server_port": 4321,
+    "_local_checkpoint_dir": "/media/petrichor/data/future/climateRL/clean/sequential_social_dilemma_games/logs/watershed_seq_comm-heavy_duty_multicomm-PPO-local_rew-True-local_obs-True",
+    "_remote_checkpoint_dir": null,
+    "_resumed": false,
+    "_start_time": 1589236195.354229,
+    "_last_checkpoint_time": 1589236195.7877016,
+    "_checkpoint_period": 10,
+    "_session_str": "2020-05-12_03-59-55",
+    "checkpoint_file": "/media/petrichor/data/future/climateRL/clean/sequential_social_dilemma_games/logs/watershed_seq_comm-heavy_duty_multicomm-PPO-local_rew-True-local_obs-True/experiment_state-2020-05-12_03-59-55.json",
+    "launch_web_server": false
+  },
+  "stats": {
+    "start_time": 1589236195.354229,
+    "timestamp": 1589236195.7877016
+  }
+}

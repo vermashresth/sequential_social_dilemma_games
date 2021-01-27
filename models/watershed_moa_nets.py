@@ -16,6 +16,8 @@ tfd = tfp.distributions
 # keras rnn Input - 16 - 16 - LSTM(64) - Out
 NUM_AGENTS = 4
 # moa lstm input -16-16 kerasrnn
+
+CF_ACTIONS = 100
 class KerasRNN(RecurrentTFModelV2):
     """Maps the input direct to an LSTM cell"""
 
@@ -246,7 +248,7 @@ class MOA_LSTM(RecurrentTFModelV2):
         counterfactual_preds = []
         counterfactual_pred_o, _, _ = self.moa_model.forward_rnn(pass_dict, [h2, c2], seq_lens)
 
-        for i in range(10):
+        for i in range(CF_ACTIONS):
             possible_actions = np.array([i*0.1])[np.newaxis, np.newaxis, :]
             stacked_actions = tf.concat([possible_actions, other_actions], axis=-1)
             pass_dict = {"curr_obs": trunk, "prev_total_actions": stacked_actions}
@@ -261,8 +263,8 @@ class MOA_LSTM(RecurrentTFModelV2):
             # print("std", std)
             dist = tfd.Normal(loc=mean, scale=std)
             my_c = []
-            for j in range(10):
-              ar = np.array([j]*1)*0.1
+            for j in range(CF_ACTIONS):
+              ar = np.array([j]*1)*1/CF_ACTIONS
               # print("now printing")
               my_c.append(dist.prob(ar))
             counterfactual_pred = tf.concat(my_c,axis=0)
@@ -270,7 +272,7 @@ class MOA_LSTM(RecurrentTFModelV2):
             counterfactual_preds.append(counterfactual_pred)
         # print("out")
         self._counterfactual_preds = tf.concat(counterfactual_preds, axis=0)
-        self._counterfactual_preds = tf.reshape(self._counterfactual_preds, [1,1,10, (NUM_AGENTS-1)*10])
+        self._counterfactual_preds = tf.reshape(self._counterfactual_preds, [1,1,CF_ACTIONS, (NUM_AGENTS-1)*CF_ACTIONS])
         # print(self._counterfactual_preds)
 
         # TODO(@evinitsky) move this into ppo_causal by using restore_original_dimensions()

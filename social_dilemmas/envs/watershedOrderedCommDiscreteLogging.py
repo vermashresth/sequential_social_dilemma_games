@@ -23,7 +23,7 @@ all_al = list(product(*B))
 # al = [0, 12, 10, 8, 6, 15, 10]
 
 big_req = [24*40, 30*40, 24*40, 30*40]
-N_ACTIONS = 100
+NUM_ACTIONS = 10
 class WatershedEnv(MultiAgentEnv):
     def __init__(self, return_agent_actions = False, local_rew = False, local_obs = False):
 
@@ -48,7 +48,7 @@ class WatershedEnv(MultiAgentEnv):
                          "visible_agents": gym.spaces.Box(low=0, high=self.num_agents, shape=(self.num_agents - 1,), dtype=np.int32)})
         else:
             self.observation_space = gym.spaces.Box(low=-250, high=250, shape=(self.n_flows + self.n_reqs + self.my_flow,))
-        self.action_space = gym.spaces.Discrete(N_ACTIONS)
+        self.action_space = gym.spaces.Discrete(NUM_ACTIONS)
 
         self.total_phases = 5
         self.current_phase = 0
@@ -58,7 +58,7 @@ class WatershedEnv(MultiAgentEnv):
 
 
     def i2id(self, i):
-        return i
+        return 'agent-'+str(i)
 
     def find_visible_agents(self, agent_id):
         visible_agents = [1 for i in range(self.num_agents-1)]
@@ -89,11 +89,11 @@ class WatershedEnv(MultiAgentEnv):
         if id==0:
             self.incoming_flows[id] = self.Q1
         elif id==1:
-            self.incoming_flows[id] = self.incoming_flows[0] * (1 - action_dict[self.i2id(0)]*1/N_ACTIONS)
+            self.incoming_flows[id] = self.incoming_flows[0] * (1 - action_dict[self.i2id(0)]*1/NUM_ACTIONS)
         elif id==2:
             self.incoming_flows[id] = self.Q2
         elif id==3:
-            self.incoming_flows[id] = self.incoming_flows[2] * (1 - action_dict[self.i2id(2)]*1/N_ACTIONS) + (self.incoming_flows[1]+self.S) * (action_dict[self.i2id(1)]*1/N_ACTIONS)
+            self.incoming_flows[id] = self.incoming_flows[2] * (1 - action_dict[self.i2id(2)]*1/NUM_ACTIONS) + (self.incoming_flows[1]+self.S) * (action_dict[self.i2id(1)]*1/NUM_ACTIONS)
         else:
             print("Wrong ID")
 
@@ -193,7 +193,7 @@ class WatershedEnv(MultiAgentEnv):
 
     def cal_rewards(self, action_dict):
         actions = list(action_dict.values())
-        x1, x2, x4, x6 = list(np.array(actions)*1/N_ACTIONS)
+        x1, x2, x4, x6 = list(np.array(actions)*1/NUM_ACTIONS)
         # x1 = al[1]+(self.Q1-al[2]-al[1])*x1
         # x4 = al[3]+(self.Q2-al[4]-al[3])*x4
         # x2 = (self.S+self.Q1-al[1])*x2
@@ -336,8 +336,8 @@ class WatershedSeqEnv(WatershedEnv):
     def step(self, action_dict):
 
         # make action shape normal
-        for agent_id in action_dict:
-            action_dict[agent_id] = np.argmax(action_dict[agent_id])
+        # for agent_id in action_dict:
+        #     action_dict[agent_id] = action_dict[agent_id][0]
 
         # Actions are stored in action history
         for agent_id in action_dict:
@@ -357,7 +357,7 @@ class WatershedSeqEnv(WatershedEnv):
             self.current_sums = list(np.array(self.current_sums) + np.array([x1, x2, x4, x6]))
 
             self.internal_step+=1
-            p = np.random.randint(10000)
+            p = np.random.randint(1000)
             if p<3:
                 print("All rewards: ", self.f_rew)
                 print("Penelaty: ", self.pen, " Violations: ", self.n_viol, " Total Viol: ", sum(self.n_viol))
@@ -411,7 +411,7 @@ class WatershedSeqEnv(WatershedEnv):
 
 
         if self.end_episode and done["__all__"]:
-          p=np.random.randint(10000)
+          p=np.random.randint(1000)
           if p<3:
             print("total episode rewards", self.rew_sum_keeper)
             print("total sum", self.current_sums)
@@ -461,11 +461,11 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
             if id==0:
                 self.incoming_flows[id] = self.Q1
             elif id==1:
-                self.incoming_flows[id] = self.incoming_flows[0] * (1 - action_dict[self.i2id(offset+0)])
+                self.incoming_flows[id] = self.incoming_flows[0] * (1 - action_dict[self.i2id(offset+0)]*1/NUM_ACTIONS)
             elif id==2:
                 self.incoming_flows[id] = self.Q2
             elif id==3:
-                self.incoming_flows[id] = self.incoming_flows[2] * (1 - action_dict[self.i2id(offset+2)]) + (self.incoming_flows[1]+self.S) * (action_dict[self.i2id(offset+1)])
+                self.incoming_flows[id] = self.incoming_flows[2] * (1 - action_dict[self.i2id(offset+2)]*1/NUM_ACTIONS) + (self.incoming_flows[1]+self.S) * (action_dict[self.i2id(offset+1)]*1/NUM_ACTIONS)
             else:
                 print("Wrong ID")
 
@@ -518,9 +518,9 @@ class WatershedSeqCommEnv(WatershedSeqEnv):
 
     def step(self, action_dict):
         # make action shape normal
-        for agent_id in action_dict:
-            if int(agent_id[-1])>=self.comm_agents:
-              action_dict[agent_id] = action_dict[agent_id][0]
+        # for agent_id in action_dict:
+        #     if int(agent_id[-1])>=self.comm_agents:
+        #       action_dict[agent_id] = action_dict[agent_id][0]
         # Actions are stored in action history
         for agent_id in action_dict:
             self.action_hist[agent_id] = action_dict[agent_id]

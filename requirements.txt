@@ -6,8 +6,6 @@ ray==0.7.6
 tensorflow==2.0.0
 tensorflow-probability==0.7.0
 scipy==1.2.0
-setproctitle
-psutil
 lz4
 boto3==1.4.8
 redis==3.3.2

@@ -18,6 +18,7 @@ from ray.rllib.utils.tf_ops import make_tf_callable
 
 from scipy.stats import norm
 
+CF_ACTIONS = 100
 
 CAUSAL_CONFIG = {"num_other_agents": 1,
                  "moa_weight": 10.0,
@@ -141,7 +142,7 @@ def compute_influence_reward(policy, trajectory):
     # print("traj actions", trajectory['actions'])
     my_act = []
     for i in trajectory['actions']:
-      val = int(i[0]*10)
+      val = int(i[0]*CF_ACTIONS)
       if val<0:
         # print(val)
         val = 0
@@ -228,12 +229,12 @@ def marginalize_predictions_over_own_actions(policy, trajectory):
     #
     # dist = tfd.Normal(loc=mean, scale=std)
     my_logits = []
-    for j in range(10):
+    for j in range(CF_ACTIONS):
       # ar = np.array([j]*n)*0.1
       # print("now printing")
-      my_logits.append(norm.pdf(j*0.1, mean, std))
+      my_logits.append(norm.pdf(j*1/CF_ACTIONS, mean, std))
     # print(my_logits)
-    action_logits = np.concatenate(my_logits, axis=0).reshape(len(mean),1, 10)
+    action_logits = np.concatenate(my_logits, axis=0).reshape(len(mean),1, CF_ACTIONS)
     # print(action_logits.shape)
     # print("low of work", action_logits)
     action_probs = scipy.special.softmax(action_logits, axis=-1)
